@@ -21,10 +21,10 @@
             <input type="password" name="password" placeholder="Mật khẩu" required>
             <button type="submit">Đăng nhập</button>
         </form>
-    </div>
-    <div style="margin-top: 15px;">
-    	<span>Chưa có tài khoản? </span>
+        <br>
+        <span>Chưa có tài khoản? </span>
     	<a href="register.jsp" style="color: #007bff; text-decoration: none;">Đăng ký ngay</a>
-	</div>
+    </div>
+    
 </body>
 </html>
