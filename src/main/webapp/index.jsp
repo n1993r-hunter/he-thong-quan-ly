@@ -19,5 +19,17 @@
     <% } else { %>
         <% response.sendRedirect("login.jsp"); %>
     <% } %>
+    <div style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; width: 400px;">
+    <h3>Tạo Dự Án / Nhóm Mới</h3>
+    
+    <% if("group_created".equals(request.getParameter("msg"))) { %>
+        <p style="color: green;">🎉 Đã tạo nhóm thành công và bạn là Leader!</p>
+    <% } %>
+    
+    <form action="GroupServlet" method="POST">
+        <input type="text" name="groupName" placeholder="Tên dự án mới..." required style="width: 70%; padding: 5px;">
+        <button type="submit" style="padding: 5px 10px;">Tạo Nhóm</button>
+    </form>
+</div>
 </body>
 </html>
