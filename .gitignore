@@ -1,0 +1,15 @@
+# Bỏ qua thư mục build và file class dịch ra
+bin/
+build/
+*.class
+
+# Bỏ qua các file cấu hình tạm của riêng máy cá nhân (Eclipse)
+.metadata/
+.settings/
+
+# Bỏ qua các file log hệ thống
+*.log
+
+# Bỏ qua file rác của hệ điều hành
+.DS_Store
+Thumbs.db
