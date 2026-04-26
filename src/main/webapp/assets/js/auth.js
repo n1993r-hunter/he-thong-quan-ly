@@ -154,14 +154,10 @@ loginForm.addEventListener('submit', function (event) {
   setLoading(loginBtn, true, 'Đăng nhập');
 
   setTimeout(() => {
-    setLoading(loginBtn, false, 'Đăng nhập');
-
-    // Demo front-end: đăng nhập thành công thì chuyển sang trang quản lý dự án.
-    window.location.href = 'projects.html';
-
-    // Khi nối Servlet có thể đổi thành:
-    // window.location.href = 'ProjectServlet';
-  }, 800);
+	setLoading(loginBtn, true, 'Đăng nhập');
+	  // -- ĐOẠN MỚI SỬA: Cho phép form gửi dữ liệu về LoginServlet --
+	  loginForm.submit(); 
+	});
 });
 
 registerForm.addEventListener('submit', function (event) {
@@ -222,12 +218,9 @@ registerForm.addEventListener('submit', function (event) {
   setLoading(registerBtn, true, 'Tạo tài khoản');
 
   setTimeout(() => {
-    setLoading(registerBtn, false, 'Tạo tài khoản');
-
-    registerForm.reset();
-    switchForm('login');
-    showMessage('Đăng ký thành công. Vui lòng đăng nhập.', 'success');
-  }, 800);
+	setLoading(registerBtn, true, 'Tạo tài khoản');
+	  registerForm.submit();
+	});
 });
 
 forgotPasswordForm.addEventListener('submit', function (event) {

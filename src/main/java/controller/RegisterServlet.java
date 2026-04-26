@@ -33,9 +33,10 @@ public class RegisterServlet extends HttpServlet {
         // 3. Gọi DAO lưu xuống Database
         UserDAO dao = new UserDAO();
         if (dao.registerUser(newUser)) {
-            // Đăng ký thành công -> Trở về trang Đăng nhập
+            // Đăng ký thành công -> Phát tín hiệu "success" về login.jsp
             response.sendRedirect("login.jsp?msg=success");
-        } else {
+        }
+        else {
             // Thất bại -> Quay lại trang Đăng ký
             response.sendRedirect("register.jsp?msg=fail");
         }

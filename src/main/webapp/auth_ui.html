@@ -12,7 +12,7 @@
     rel="stylesheet"
   />
 
-  <link rel="stylesheet" href="auth.css" />
+  <link rel="stylesheet" href="assets/css/auth.css" />
 </head>
 
 <body>
@@ -71,13 +71,13 @@
         <div class="message-box" id="messageBox"></div>
 
         <!-- LOGIN FORM -->
-        <form class="form active" id="loginForm" action="#" method="post">
+        <form class="form active" id="loginForm" action="LoginServlet" method="post">
           <div class="form-group">
             <label for="loginEmail">Email hoặc username</label>
             <input
               type="text"
               id="loginEmail"
-              name="email"
+              name="username"
               placeholder="Nhập email hoặc username"
               autocomplete="username"
               required
@@ -116,7 +116,7 @@
         </form>
 
         <!-- REGISTER FORM -->
-        <form class="form" id="registerForm" action="#" method="post">
+        <form class="form" id="registerForm" action="RegisterServlet" method="post">
           <div class="form-group">
             <label for="fullName">Họ và tên</label>
             <input
@@ -140,6 +140,18 @@
               required
             />
           </div>
+
+		  <div class="form-group">
+			<label for="registerUsername">Tên đăng nhập</label>
+			<input
+			  type="text"
+			  id="registerUsername"
+			  name="username"
+			  placeholder="Nhập tên đăng nhập"
+			  autocomplete="username"
+			  required
+			/>
+		  </div>
 
           <div class="form-group">
             <label for="registerPassword">Mật khẩu</label>
@@ -198,6 +210,6 @@
     </section>
   </main>
 
-  <script src="auth.js"></script>
+  <script src="assets/js/auth.js"></script>
 </body>
 </html>
