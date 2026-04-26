@@ -6,12 +6,15 @@
     <meta charset="UTF-8">
     <title>Zero-Sum Coin Exchange | Authentication</title>
     
-    <%-- 1. NHÚNG GIAO DIỆN CỦA TRÂM: Giữ nguyên vẻ đẹp của Frontend --%>
+    <%-- Nhúng giao diện tĩnh của Trâm --%>
     <jsp:include page="auth_ui.html" />
 </head>
 <body>
 
     <script>
+        /**
+         * Hàm bổ trợ đọc Cookie phục vụ tính năng "Ghi nhớ đăng nhập"
+         */
         function getCookie(name) {
             let cookieArr = document.cookie.split(";");
             for(let i = 0; i < cookieArr.length; i++) {
@@ -21,24 +24,34 @@
             return null;
         }
 
+        /**
+         * window.onload đảm bảo script chạy sau khi auth.js của Trâm đã tải xong
+         */
         window.onload = function() {
-            // 1. Tự điền Cookie
+            // --- 1. XỬ LÝ GHI NHỚ ĐĂNG NHẬP (COOKIE) ---
             let savedUser = getCookie("cUser");
             let savedPass = getCookie("cPass");
             if (savedUser && savedPass) {
-                if(document.getElementById('loginEmail')) document.getElementById('loginEmail').value = savedUser;
-                if(document.getElementById('loginPassword')) document.getElementById('loginPassword').value = savedPass;
-                if(document.querySelector('input[name="remember"]')) document.querySelector('input[name="remember"]').checked = true;
+                const loginEmailField = document.getElementById('loginEmail');
+                const loginPasswordField = document.getElementById('loginPassword');
+                const rememberCheckbox = document.querySelector('input[name="remember"]');
+
+                if (loginEmailField) loginEmailField.value = savedUser;
+                if (loginPasswordField) loginPasswordField.value = savedPass;
+                if (rememberCheckbox) rememberCheckbox.checked = true;
             }
 
-            // 2. HIỆN THÔNG BÁO LỖI TỪ SERVLET
+            // --- 2. LOGIC HIỂN THỊ THÔNG BÁO (ƯU TIÊN LỖI) ---
+            const canShow = (typeof showMessage === "function" && typeof switchForm === "function");
+            if (!canShow) return;
+
+            <%-- ƯU TIÊN 1: Hiển thị lỗi từ LoginServlet (Dùng Attribute) --%>
             <% if (request.getAttribute("error") != null) { %>
-                if (typeof showMessage === "function") {
-                    // Hiện thông báo đỏ của Trâm
-                    showMessage('<%= request.getAttribute("error") %>', 'error');
-                }
+                // Hiện thông báo lỗi màu đỏ
+                showMessage('<%= request.getAttribute("error") %>', 'error');
+                switchForm('login');
                 
-                // Điền lại Username cũ
+                // Điền lại Username đã nhập để không phải gõ lại
                 <% if (request.getAttribute("oldUsername") != null) { %>
                     const emailInput = document.getElementById('loginEmail');
                     if (emailInput) {
@@ -46,12 +59,23 @@
                         document.getElementById('loginPassword').focus(); 
                     }
                 <% } %>
+                
+                // CỰC QUAN TRỌNG: Dừng xử lý tại đây nếu có lỗi đăng nhập
+                // Để tránh việc tham số "msg=success" cũ trên URL làm hiện đè thông báo xanh
+                return; 
             <% } %>
 
-            // 3. Xử lý các thông báo Msg khác
-            <% if ("fail".equals(request.getParameter("msg"))) { %>
-                if(typeof showMessage === "function") showMessage('Đăng ký thất bại!', 'error');
-                if(typeof switchForm === "function") switchForm('register');
+            <%-- ƯU TIÊN 2: Hiển thị thông báo từ RegisterServlet (Dùng Parameter) --%>
+            <% 
+                String msg = request.getParameter("msg"); 
+                if ("success".equals(msg)) { 
+            %>
+                // CHÚ Ý: Gọi switchForm TRƯỚC để xóa message cũ, sau đó mới hiện showMessage
+                switchForm('login');
+                showMessage('Đăng ký thành công. Vui lòng đăng nhập.', 'success');
+            <% } else if ("fail".equals(msg)) { %>
+                switchForm('register');
+                showMessage('Đăng ký thất bại! Tài khoản hoặc Email đã tồn tại.', 'error');
             <% } %>
         };
     </script>
