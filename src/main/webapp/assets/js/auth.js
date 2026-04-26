@@ -153,11 +153,8 @@ loginForm.addEventListener('submit', function (event) {
 
   setLoading(loginBtn, true, 'Đăng nhập');
 
-  setTimeout(() => {
-	setLoading(loginBtn, true, 'Đăng nhập');
-	  // -- ĐOẠN MỚI SỬA: Cho phép form gửi dữ liệu về LoginServlet --
-	  loginForm.submit(); 
-	});
+  loginForm.submit(); 
+	
 });
 
 registerForm.addEventListener('submit', function (event) {
