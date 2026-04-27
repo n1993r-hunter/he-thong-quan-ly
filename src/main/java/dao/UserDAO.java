@@ -64,4 +64,24 @@ public class UserDAO {
         }
         return false;
     }
+    
+    //update pw
+    public boolean updatePasswordByEmail(String email, String newPassword) {
+        String sql = "UPDATE USERS SET password = ? WHERE email = ?";
+        try {
+            // Đã dùng chuẩn DBConnection theo cấu trúc của nhóm Hưng
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            
+            ps.setString(1, newPassword);
+            ps.setString(2, email);
+            
+            int rowAffected = ps.executeUpdate();
+            return rowAffected > 0; // Trả về true nếu đổi mật khẩu thành công
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
+    
 }

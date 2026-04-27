@@ -52,15 +52,26 @@
 
             <%-- ƯU TIÊN 2: Thông báo từ URL --%>
             <% 
-                String msg = request.getParameter("msg"); 
+                String msg = request.getParameter("msg");
+                
                 if ("success".equals(msg)) { 
             %>
                 switchForm('login');
                 showMessage('Đăng ký thành công. Vui lòng đăng nhập.', 'success');
-            <% } else if ("fail".equals(msg)) { %>
+                
+            <%  } else if ("fail".equals(msg)) { %>
                 switchForm('register');
                 showMessage('Đăng ký thất bại! Tài khoản hoặc Email đã tồn tại.', 'error');
-            <% } %>
+                
+            <%  } else if ("reset_success".equals(msg)) { %>
+                switchForm('login');
+                showMessage('Mật khẩu đã được cập nhật. Hãy đăng nhập lại!', 'success');
+                
+            <%  } else if ("email_not_found".equals(msg)) { %>
+                switchForm('forgot');
+                showMessage('Email này không tồn tại trong hệ thống!', 'error');
+            <%  } %>
+            
         };
     </script>
 </body>
