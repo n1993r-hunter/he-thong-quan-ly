@@ -38,15 +38,6 @@ function setLoading(button, isLoading, defaultText) {
   }
 }
 
-function hideAllForms() {
-  loginForm.classList.remove('active');
-  registerForm.classList.remove('active');
-  forgotPasswordForm.classList.remove('active');
-
-  loginTab.classList.remove('active');
-  registerTab.classList.remove('active');
-}
-
 function switchForm(type) {
   clearMessage();
 
@@ -92,7 +83,7 @@ function switchForm(type) {
 
     formTitle.textContent = 'Quên mật khẩu';
     formSubtitle.textContent =
-      'Nhập email đã đăng ký để nhận hướng dẫn khôi phục mật khẩu.';
+      'Nhập email đã đăng ký và thiết lập mật khẩu mới.';
 
     tabs.classList.add('is-hidden');
 
@@ -106,22 +97,18 @@ function isValidEmail(email) {
   return /^[^\s@]+@[^\s@]+\.[^\s@]+$/.test(email);
 }
 
-document.addEventListener('DOMContentLoaded', function () {
-  loginTab.addEventListener('click', () => switchForm('login'));
-  registerTab.addEventListener('click', () => switchForm('register'));
+loginTab.addEventListener('click', () => switchForm('login'));
+registerTab.addEventListener('click', () => switchForm('register'));
 
-  const forgotPasswordBtn = document.getElementById('forgotPasswordBtn');
+if (forgotPasswordBtn) {
+  forgotPasswordBtn.addEventListener('click', () => {
+    switchForm('forgot');
+  });
+}
 
-  if (forgotPasswordBtn) {
-    forgotPasswordBtn.addEventListener('click', () => {
-      switchForm('forgot');
-    });
-  }
-
-  document.querySelectorAll('.hint button').forEach((button) => {
-    button.addEventListener('click', () => {
-      switchForm(button.dataset.target);
-    });
+document.querySelectorAll('.hint button').forEach((button) => {
+  button.addEventListener('click', () => {
+    switchForm(button.dataset.target);
   });
 });
 
@@ -152,9 +139,7 @@ loginForm.addEventListener('submit', function (event) {
   }
 
   setLoading(loginBtn, true, 'Đăng nhập');
-
-  loginForm.submit(); 
-	
+  loginForm.submit();
 });
 
 registerForm.addEventListener('submit', function (event) {
@@ -162,11 +147,13 @@ registerForm.addEventListener('submit', function (event) {
 
   const fullNameInput = document.getElementById('fullName');
   const emailInput = document.getElementById('registerEmail');
+  const usernameInput = document.getElementById('registerUsername');
   const passwordInput = document.getElementById('registerPassword');
   const confirmPasswordInput = document.getElementById('confirmPassword');
 
   const fullName = fullNameInput.value.trim();
   const email = emailInput.value.trim();
+  const username = usernameInput.value.trim();
   const password = passwordInput.value.trim();
   const confirmPassword = confirmPasswordInput.value.trim();
 
@@ -185,6 +172,18 @@ registerForm.addEventListener('submit', function (event) {
   if (!isValidEmail(email)) {
     showMessage('Email không hợp lệ.');
     emailInput.focus();
+    return;
+  }
+
+  if (!username) {
+    showMessage('Vui lòng nhập tên đăng nhập.');
+    usernameInput.focus();
+    return;
+  }
+
+  if (username.length < 3) {
+    showMessage('Tên đăng nhập phải có ít nhất 3 ký tự.');
+    usernameInput.focus();
     return;
   }
 
@@ -213,18 +212,19 @@ registerForm.addEventListener('submit', function (event) {
   }
 
   setLoading(registerBtn, true, 'Tạo tài khoản');
-
-  setTimeout(() => {
-	setLoading(registerBtn, true, 'Tạo tài khoản');
-	  registerForm.submit();
-	});
+  registerForm.submit();
 });
 
 forgotPasswordForm.addEventListener('submit', function (event) {
   event.preventDefault();
 
   const forgotEmailInput = document.getElementById('forgotEmail');
+  const newPasswordInput = document.getElementById('newPassword');
+  const confirmNewPasswordInput = document.getElementById('confirmNewPassword');
+
   const email = forgotEmailInput.value.trim();
+  const newPassword = newPasswordInput.value.trim();
+  const confirmNewPassword = confirmNewPasswordInput.value.trim();
 
   if (!email) {
     showMessage('Vui lòng nhập email khôi phục.');
@@ -238,15 +238,30 @@ forgotPasswordForm.addEventListener('submit', function (event) {
     return;
   }
 
-  setLoading(forgotBtn, true, 'Gửi yêu cầu khôi phục');
+  if (!newPassword) {
+    showMessage('Vui lòng nhập mật khẩu mới.');
+    newPasswordInput.focus();
+    return;
+  }
 
-  setTimeout(() => {
-    setLoading(forgotBtn, false, 'Gửi yêu cầu khôi phục');
+  if (newPassword.length < 6) {
+    showMessage('Mật khẩu mới phải có ít nhất 6 ký tự.');
+    newPasswordInput.focus();
+    return;
+  }
 
-    forgotPasswordForm.reset();
-    showMessage(
-      'Yêu cầu khôi phục đã được gửi. Vui lòng kiểm tra email của bạn.',
-      'success'
-    );
-  }, 800);
+  if (!confirmNewPassword) {
+    showMessage('Vui lòng xác nhận mật khẩu mới.');
+    confirmNewPasswordInput.focus();
+    return;
+  }
+
+  if (newPassword !== confirmNewPassword) {
+    showMessage('Mật khẩu mới xác nhận không khớp.');
+    confirmNewPasswordInput.focus();
+    return;
+  }
+
+  setLoading(forgotBtn, true, 'Cập nhật mật khẩu');
+  forgotPasswordForm.submit();
 });
