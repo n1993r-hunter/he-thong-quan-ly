@@ -59,4 +59,27 @@ public class GroupDAO {
         }
         return false;
     }
+    
+ // Hàm thêm thành viên mới vào nhóm và phân quyền
+    
+    public boolean addMemberToGroup(int groupId, String usernameToAdd) {
+        // Chỉ cần insert group_id và user_id. Cột role tự động nhận giá trị 'member' từ DB.
+        String sql = "INSERT INTO GROUP_MEMBERS (group_id, user_id) " +
+                     "SELECT ?, user_id FROM USERS WHERE username = ?";
+                     
+        try {
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+            
+            ps.setInt(1, groupId);
+            ps.setString(2, usernameToAdd);  
+            
+            int rowAffected = ps.executeUpdate();
+            return rowAffected > 0; 
+            
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+        return false;
+    }
 }
