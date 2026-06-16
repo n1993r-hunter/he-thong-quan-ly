@@ -393,6 +393,22 @@ CREATE TABLE MEMBER_FINAL_SCORES (
     FOREIGN KEY (user_id) REFERENCES USERS(user_id)
 );
 
+CREATE TABLE GROUP_JOIN_REQUESTS (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    group_id INT NOT NULL,
+    user_id INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME,
+    reviewed_by INT,
+
+    FOREIGN KEY (group_id) REFERENCES `GROUPS`(group_id),
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
+    FOREIGN KEY (reviewed_by) REFERENCES USERS(user_id),
+
+    UNIQUE (group_id, user_id)
+);
+
 -- =========================================================
 -- DỮ LIỆU MẶC ĐỊNH
 -- =========================================================

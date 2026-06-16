@@ -70,43 +70,38 @@
         </a>
     </div>
 
-    <!-- PHẦN 3: THÊM THÀNH VIÊN VÀO NHÓM -->
     <div style="border: 1px solid #ccc; padding: 15px; margin-top: 20px; width: 420px; border-radius: 5px;">
-        <h3>Thêm Thành Viên Vào Nhóm</h3>
+    <h3>Gia nhập nhóm</h3>
 
-        <% if ("add_success".equals(msg)) { %>
-            <p style="color: green; font-weight: bold;">✅ Đã thêm thành viên thành công!</p>
-        <% } else if ("add_fail".equals(msg)) { %>
-            <p style="color: red; font-weight: bold;">❌ Thất bại! Sai tên đăng nhập hoặc người này đã có trong nhóm.</p>
-        <% } else if ("invalid_group".equals(msg)) { %>
-            <p style="color: red; font-weight: bold;">⚠️ Vui lòng nhập đúng ID Nhóm bằng số!</p>
-        <% } %>
+    <p>Nhập ID nhóm để gửi yêu cầu gia nhập. Leader sẽ duyệt yêu cầu của bạn.</p>
 
-        <form action="AddMemberServlet" method="POST">
-            <div style="margin-bottom: 10px;">
-                <label>ID Nhóm:</label><br>
-                <input type="number"
-                       name="groupId"
-                       placeholder="Nhập số ID Nhóm..."
-                       required
-                       style="width: 95%; padding: 6px; border-radius: 3px; border: 1px solid #ccc;">
-            </div>
+    <% if ("join_sent".equals(msg)) { %>
+        <p style="color: green; font-weight: bold;">✅ Đã gửi yêu cầu gia nhập nhóm. Vui lòng chờ leader duyệt.</p>
+    <% } else if ("join_group_not_found".equals(msg)) { %>
+        <p style="color: red; font-weight: bold;">❌ Không tìm thấy nhóm với ID này.</p>
+    <% } else if ("join_already_member".equals(msg)) { %>
+        <p style="color: red; font-weight: bold;">⚠️ Bạn đã là thành viên của nhóm này rồi.</p>
+    <% } else if ("join_already_pending".equals(msg)) { %>
+        <p style="color: red; font-weight: bold;">⏳ Bạn đã gửi yêu cầu trước đó. Vui lòng chờ leader duyệt.</p>
+    <% } else if ("join_fail".equals(msg)) { %>
+        <p style="color: red; font-weight: bold;">❌ Gửi yêu cầu thất bại. Vui lòng thử lại.</p>
+    <% } else if ("invalid_group".equals(msg)) { %>
+        <p style="color: red; font-weight: bold;">⚠️ ID nhóm không hợp lệ.</p>
+    <% } %>
 
-            <div style="margin-bottom: 15px;">
-                <label>Tên đăng nhập (Username):</label><br>
-                <input type="text"
-                       name="username"
-                       placeholder="Nhập username đồng đội..."
-                       required
-                       style="width: 95%; padding: 6px; border-radius: 3px; border: 1px solid #ccc;">
-            </div>
+    <form action="JoinGroupRequestServlet" method="POST">
+        <input type="number"
+               name="groupId"
+               placeholder="Nhập ID nhóm..."
+               required
+               style="width: 70%; padding: 6px; border-radius: 3px; border: 1px solid #ccc;">
 
-            <button type="submit"
-                    style="padding: 6px 12px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">
-                Thêm Thành Viên
-            </button>
-        </form>
-    </div>
+        <button type="submit"
+                style="padding: 6px 12px; background-color: #28a745; color: white; border: none; border-radius: 3px; cursor: pointer;">
+            Gửi yêu cầu
+        </button>
+    </form>
+</div>
 
 </body>
 </html>

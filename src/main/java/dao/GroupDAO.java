@@ -214,4 +214,337 @@ public class GroupDAO {
         ps.executeUpdate();
         ps.close();
     }
+    public boolean isUserInGroup(int userId, int groupId) {
+        String sql = "SELECT member_id FROM GROUP_MEMBERS WHERE user_id = ? AND group_id = ?";
+
+        try {
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ps.setInt(1, userId);
+            ps.setInt(2, groupId);
+
+            ResultSet rs = ps.executeQuery();
+
+            boolean exists = rs.next();
+
+            rs.close();
+            ps.close();
+            conn.close();
+
+            return exists;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+ // Kiểm tra user có phải leader của nhóm không
+    public boolean isLeader(int userId, int groupId) {
+        String sql = "SELECT member_id FROM GROUP_MEMBERS WHERE user_id = ? AND group_id = ? AND role = 'leader'";
+
+        try {
+            Connection conn = DBConnection.getConnection();
+            PreparedStatement ps = conn.prepareStatement(sql);
+
+            ps.setInt(1, userId);
+            ps.setInt(2, groupId);
+
+            ResultSet rs = ps.executeQuery();
+
+            boolean result = rs.next();
+
+            rs.close();
+            ps.close();
+            conn.close();
+
+            return result;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return false;
+    }
+
+
+    // Leader kick thành viên khỏi nhóm
+    public boolean kickMemberFromGroup(int groupId, int memberUserId, int leaderId) {
+        if (!isLeader(leaderId, groupId)) {
+            return false;
+        }
+
+        // Không cho leader tự kick chính mình
+        if (memberUserId == leaderId) {
+            return false;
+        }
+
+        Connection conn = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            // Xóa dữ liệu AI liên quan đến bài nộp của member trong nhóm
+            executeUpdate(conn,
+                "DELETE ae FROM AI_EVALUATIONS ae " +
+                "JOIN TASK_SUBMISSIONS ts ON ae.submission_id = ts.submission_id " +
+                "JOIN TASKS t ON ts.task_id = t.task_id " +
+                "WHERE t.group_id = ? AND ts.user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa bài nộp của member trong nhóm
+            executeUpdate(conn,
+                "DELETE ts FROM TASK_SUBMISSIONS ts " +
+                "JOIN TASKS t ON ts.task_id = t.task_id " +
+                "WHERE t.group_id = ? AND ts.user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa log tiến độ của member
+            executeUpdate(conn,
+                "DELETE tpl FROM TASK_PROGRESS_LOGS tpl " +
+                "JOIN TASK_ASSIGNMENTS ta ON tpl.assignment_id = ta.assignment_id " +
+                "JOIN TASKS t ON ta.task_id = t.task_id " +
+                "WHERE t.group_id = ? AND ta.user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa tổng hợp điểm task của member
+            executeUpdate(conn,
+                "DELETE FROM TASK_SCORE_SUMMARY WHERE group_id = ? AND user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa assignment của member
+            executeUpdate(conn,
+                "DELETE ta FROM TASK_ASSIGNMENTS ta " +
+                "JOIN TASKS t ON ta.task_id = t.task_id " +
+                "WHERE t.group_id = ? AND ta.user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa review liên quan đến member
+            executeUpdate(conn,
+                "DELETE FROM PEER_REVIEWS WHERE group_id = ? AND (reviewer_id = ? OR reviewed_user_id = ?)",
+                groupId, memberUserId, memberUserId
+            );
+
+            executeUpdate(conn,
+                "DELETE FROM LEADER_REVIEWS WHERE group_id = ? AND (leader_id = ? OR reviewed_user_id = ?)",
+                groupId, memberUserId, memberUserId
+            );
+
+            // Xóa comment của member trong task thuộc nhóm
+            executeUpdate(conn,
+                "DELETE FROM TASK_COMMENTS WHERE user_id = ? AND task_id IN (SELECT task_id FROM TASKS WHERE group_id = ?)",
+                memberUserId, groupId
+            );
+
+            // Xóa activity log
+            executeUpdate(conn,
+                "DELETE FROM ACTIVITY_LOGS WHERE group_id = ? AND user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa điểm cuối nếu có
+            executeUpdate(conn,
+                "DELETE FROM MEMBER_FINAL_SCORES WHERE group_id = ? AND user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa lịch sử stock trước
+            executeUpdate(conn,
+                "DELETE sph FROM STOCK_PRICE_HISTORY sph " +
+                "JOIN STOCKS s ON sph.stock_id = s.stock_id " +
+                "WHERE s.group_id = ? AND s.user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa stock của member
+            executeUpdate(conn,
+                "DELETE FROM STOCKS WHERE group_id = ? AND user_id = ?",
+                groupId, memberUserId
+            );
+
+            // Xóa member khỏi group
+            int row = executeUpdate(conn,
+                "DELETE FROM GROUP_MEMBERS WHERE group_id = ? AND user_id = ?",
+                groupId, memberUserId
+            );
+
+            conn.commit();
+
+            return row > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    // Leader giải thể nhóm
+    public boolean dissolveGroup(int groupId, int leaderId) {
+        if (!isLeader(leaderId, groupId)) {
+            return false;
+        }
+
+        Connection conn = null;
+
+        try {
+            conn = DBConnection.getConnection();
+            conn.setAutoCommit(false);
+
+            // Xóa điểm cuối và điểm thầy cô
+            executeUpdate(conn, "DELETE FROM MEMBER_FINAL_SCORES WHERE group_id = ?", groupId);
+            executeUpdate(conn, "DELETE FROM GROUP_TEACHER_SCORES WHERE group_id = ?", groupId);
+
+            // Xóa review
+            executeUpdate(conn, "DELETE FROM PEER_REVIEWS WHERE group_id = ?", groupId);
+            executeUpdate(conn, "DELETE FROM LEADER_REVIEWS WHERE group_id = ?", groupId);
+
+            // Xóa AI evaluations
+            executeUpdate(conn,
+                "DELETE ae FROM AI_EVALUATIONS ae " +
+                "JOIN TASKS t ON ae.task_id = t.task_id " +
+                "WHERE t.group_id = ?",
+                groupId
+            );
+
+            // Xóa task score summary
+            executeUpdate(conn, "DELETE FROM TASK_SCORE_SUMMARY WHERE group_id = ?", groupId);
+
+            // Xóa progress logs
+            executeUpdate(conn,
+                "DELETE tpl FROM TASK_PROGRESS_LOGS tpl " +
+                "JOIN TASK_ASSIGNMENTS ta ON tpl.assignment_id = ta.assignment_id " +
+                "JOIN TASKS t ON ta.task_id = t.task_id " +
+                "WHERE t.group_id = ?",
+                groupId
+            );
+
+            // Xóa submissions
+            executeUpdate(conn,
+                "DELETE ts FROM TASK_SUBMISSIONS ts " +
+                "JOIN TASKS t ON ts.task_id = t.task_id " +
+                "WHERE t.group_id = ?",
+                groupId
+            );
+
+            // Xóa task assignments
+            executeUpdate(conn,
+                "DELETE ta FROM TASK_ASSIGNMENTS ta " +
+                "JOIN TASKS t ON ta.task_id = t.task_id " +
+                "WHERE t.group_id = ?",
+                groupId
+            );
+
+            // Xóa comment, subtask
+            executeUpdate(conn,
+                "DELETE FROM TASK_COMMENTS WHERE task_id IN (SELECT task_id FROM TASKS WHERE group_id = ?)",
+                groupId
+            );
+
+            executeUpdate(conn,
+                "DELETE FROM SUBTASKS WHERE task_id IN (SELECT task_id FROM TASKS WHERE group_id = ?)",
+                groupId
+            );
+
+            // Xóa stock history theo stock
+            executeUpdate(conn,
+                "DELETE sph FROM STOCK_PRICE_HISTORY sph " +
+                "JOIN STOCKS s ON sph.stock_id = s.stock_id " +
+                "WHERE s.group_id = ?",
+                groupId
+            );
+
+            // Xóa stock history theo task nếu còn
+            executeUpdate(conn,
+                "DELETE sph FROM STOCK_PRICE_HISTORY sph " +
+                "JOIN TASKS t ON sph.task_id = t.task_id " +
+                "WHERE t.group_id = ?",
+                groupId
+            );
+
+            // Xóa activity logs
+            executeUpdate(conn, "DELETE FROM ACTIVITY_LOGS WHERE group_id = ?", groupId);
+
+            // Xóa stocks
+            executeUpdate(conn, "DELETE FROM STOCKS WHERE group_id = ?", groupId);
+
+            // Xóa tasks
+            executeUpdate(conn, "DELETE FROM TASKS WHERE group_id = ?", groupId);
+
+            // Xóa group members
+            executeUpdate(conn, "DELETE FROM GROUP_MEMBERS WHERE group_id = ?", groupId);
+
+            // Xóa group
+            int row = executeUpdate(conn, "DELETE FROM `GROUPS` WHERE group_id = ?", groupId);
+
+            conn.commit();
+
+            return row > 0;
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            if (conn != null) {
+                try {
+                    conn.rollback();
+                } catch (Exception ex) {
+                    ex.printStackTrace();
+                }
+            }
+
+        } finally {
+            if (conn != null) {
+                try {
+                    conn.setAutoCommit(true);
+                    conn.close();
+                } catch (Exception e) {
+                    e.printStackTrace();
+                }
+            }
+        }
+
+        return false;
+    }
+
+
+    // Hàm phụ để chạy DELETE/UPDATE/INSERT
+    private int executeUpdate(Connection conn, String sql, Object... params) throws Exception {
+        PreparedStatement ps = conn.prepareStatement(sql);
+
+        for (int i = 0; i < params.length; i++) {
+            ps.setObject(i + 1, params[i]);
+        }
+
+        int row = ps.executeUpdate();
+
+        ps.close();
+
+        return row;
+    }
 }
