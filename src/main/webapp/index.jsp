@@ -24,6 +24,7 @@
 
     Object groupsObj = request.getAttribute("groups");
 
+    // Nếu người dùng vào thẳng index.jsp thì chuyển qua servlet để lấy danh sách nhóm
     if (groupsObj == null) {
         response.sendRedirect("MyGroupsServlet");
         return;
@@ -99,23 +100,20 @@
             flex-wrap: wrap;
         }
 
+        .upload-form {
+            display: grid;
+            grid-template-columns: 1fr 220px;
+            gap: 12px;
+            align-items: center;
+        }
+
         @media(max-width: 760px) {
-            .project-actions {
+            .project-actions,
+            .upload-form {
+                grid-template-columns: 1fr;
                 flex-direction: column;
             }
         }
-        .upload-form {
-    display: grid;
-    grid-template-columns: 1fr 220px;
-    gap: 12px;
-    align-items: center;
-}
-
-@media(max-width: 760px) {
-    .upload-form {
-        grid-template-columns: 1fr;
-    }
-}
     </style>
 </head>
 
@@ -163,7 +161,7 @@
             </div>
         </header>
 
-        <% if (msg != null) { %>
+        <% if (msg != null && !msg.trim().isEmpty()) { %>
             <div class="backend-message">
                 Trạng thái: <%= h(msg) %>
             </div>
@@ -180,26 +178,26 @@
                 + Tạo dự án mới
             </button>
         </section>
-        
+
         <section class="panel" style="margin-bottom:24px;">
-    <div class="panel-header">
-        <div>
-            <h2>Tham gia nhóm bằng Group ID</h2>
-            <p>Nhập mã Group ID do nhóm trưởng gửi để yêu cầu tham gia nhóm.</p>
-        </div>
-    </div>
+            <div class="panel-header">
+                <div>
+                    <h2>Tham gia nhóm bằng Group ID</h2>
+                    <p>Nhập mã Group ID do nhóm trưởng gửi để yêu cầu tham gia nhóm.</p>
+                </div>
+            </div>
 
-    <form action="JoinGroupRequestServlet" method="post" class="upload-form">
-        <input type="number"
-               name="groupId"
-               placeholder="Nhập Group ID, ví dụ: 1"
-               required>
+            <form action="JoinGroupRequestServlet" method="post" class="upload-form">
+                <input type="number"
+                       name="groupId"
+                       placeholder="Nhập Group ID, ví dụ: 1"
+                       required>
 
-        <button class="secondary-btn" type="submit">
-            Gửi yêu cầu tham gia
-        </button>
-    </form>
-</section>
+                <button class="secondary-btn" type="submit">
+                    Gửi yêu cầu tham gia
+                </button>
+            </form>
+        </section>
 
         <section class="stats-grid">
             <article class="stat-card">
@@ -237,14 +235,16 @@
 
             <% if (groups.isEmpty()) { %>
                 <div class="empty-state" style="display:block;">
-                    Bạn chưa có dự án nào. Hãy tạo dự án mới.
+                    Bạn chưa có dự án nào. Hãy tạo dự án mới hoặc gửi yêu cầu tham gia nhóm.
                 </div>
             <% } else { %>
                 <div class="project-list">
                     <% for (Group g : groups) { %>
                         <article class="project-card-backend">
                             <span class="badge active">Đang chạy</span>
+
                             <h3><%= h(g.getGroupName()) %></h3>
+
                             <p>
                                 Group ID: <b><%= g.getGroupId() %></b><br>
                                 Created by User ID: <b><%= g.getCreatedBy() %></b>
@@ -293,29 +293,40 @@
 </div>
 
 <script>
-    const projectModal = document.getElementById('projectModal');
-    const openCreateModal = document.getElementById('openCreateModal');
-    const closeModal = document.getElementById('closeModal');
-    const cancelCreateBtn = document.getElementById('cancelCreateBtn');
+    var projectModal = document.getElementById('projectModal');
+    var openCreateModal = document.getElementById('openCreateModal');
+    var closeModal = document.getElementById('closeModal');
+    var cancelCreateBtn = document.getElementById('cancelCreateBtn');
 
-    openCreateModal?.addEventListener('click', function () {
-        projectModal.classList.add('show');
-        projectModal.setAttribute('aria-hidden', 'false');
-    });
-
-    function closeCreateModal() {
-        projectModal.classList.remove('show');
-        projectModal.setAttribute('aria-hidden', 'true');
+    if (openCreateModal) {
+        openCreateModal.addEventListener('click', function () {
+            projectModal.classList.add('show');
+            projectModal.setAttribute('aria-hidden', 'false');
+        });
     }
 
-    closeModal?.addEventListener('click', closeCreateModal);
-    cancelCreateBtn?.addEventListener('click', closeCreateModal);
-
-    projectModal?.addEventListener('click', function (event) {
-        if (event.target === projectModal) {
-            closeCreateModal();
+    function closeCreateModal() {
+        if (projectModal) {
+            projectModal.classList.remove('show');
+            projectModal.setAttribute('aria-hidden', 'true');
         }
-    });
+    }
+
+    if (closeModal) {
+        closeModal.addEventListener('click', closeCreateModal);
+    }
+
+    if (cancelCreateBtn) {
+        cancelCreateBtn.addEventListener('click', closeCreateModal);
+    }
+
+    if (projectModal) {
+        projectModal.addEventListener('click', function (event) {
+            if (event.target === projectModal) {
+                closeCreateModal();
+            }
+        });
+    }
 </script>
 </body>
 </html>
