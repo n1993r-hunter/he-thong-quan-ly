@@ -13,7 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zero-Sum Coin Exchange | Quản lý dự án</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/projects.css" />
 </head>
@@ -116,7 +116,7 @@
         <div class="form-group"><label for="projectDesc">Mô tả dự án</label><textarea id="projectDesc" rows="3" placeholder="Mô tả ngắn mục tiêu, phạm vi hoặc yêu cầu của dự án..."></textarea></div>
 
         <div class="section-box">
-          <div class="section-head"><div><h3>Thành viên & coin khởi tạo</h3><p>Mỗi thành viên là một mã coin trong dự án.</p></div><button class="secondary-btn" id="addMemberBtn" type="button">+ Thêm thành viên</button></div>
+          <div class="section-head"><div><h3>Thành viên và coin khởi tạo</h3><p>Mỗi thành viên là một mã coin trong dự án.</p></div><button class="secondary-btn" id="addMemberBtn" type="button">+ Thêm thành viên</button></div>
           <div id="memberList" class="dynamic-list"></div>
         </div>
 

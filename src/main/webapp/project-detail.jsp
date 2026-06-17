@@ -13,7 +13,7 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0" />
   <title>Zero-Sum Coin Exchange | Chi tiết dự án</title>
   <link rel="preconnect" href="https://fonts.googleapis.com" />
-  <link rel="preconnect" href="https://fonts.gstatic.com" crossorigin />
+  <link rel="preconnect" href="https://fonts.gstatic.com" />
   <link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700;800;900&display=swap" rel="stylesheet" />
   <link rel="stylesheet" href="assets/css/project-detail.css" />
 </head>
@@ -70,7 +70,7 @@
       </section>
 
       <section class="panel" id="members">
-        <div class="panel-header"><div><h2>Thành viên & bài làm</h2><p>Thành viên cập nhật bài của mình; mọi người đều xem và đánh giá bài làm của nhau.</p></div></div>
+        <div class="panel-header"><div><h2>Thành viên và bài làm</h2><p>Thành viên cập nhật bài của mình; mọi người đều xem và đánh giá bài làm của nhau.</p></div></div>
         <div class="member-grid" id="memberGrid"></div>
       </section>
     </main>

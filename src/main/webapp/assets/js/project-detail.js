@@ -70,7 +70,6 @@ function loadProjects() {
   try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
   if (!projects.length) projects = [sampleProject];
 }
-
 function saveProjects() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
 }
