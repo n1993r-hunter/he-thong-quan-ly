@@ -1,11 +1,3 @@
-<%@ page import="model.User" contentType="text/html; charset=UTF-8" pageEncoding="UTF-8" %>
-<%
-  User loginedUser = (User) session.getAttribute("loginedUser");
-  if (loginedUser == null) {
-    response.sendRedirect("login.jsp");
-    return;
-  }
-%>
 <!DOCTYPE html>
 <html lang="vi">
 <head>
@@ -18,18 +10,6 @@
   <link rel="stylesheet" href="assets/css/projects.css" />
 </head>
 <body>
-<script>
-  window.ZC_BACKEND_USER = {
-    id: "<%= loginedUser.getUserId() %>",
-    fullName: "<%= loginedUser.getFullName() == null ? "" : loginedUser.getFullName().replace("\\", "\\\\").replace("\"", "\\\"") %>",
-    email: "<%= loginedUser.getEmail() == null ? "" : loginedUser.getEmail().replace("\\", "\\\\").replace("\"", "\\\"") %>",
-    username: "<%= loginedUser.getUsername() == null ? "" : loginedUser.getUsername().replace("\\", "\\\\").replace("\"", "\\\"") %>"
-  };
-  localStorage.setItem("zc_logged_in", "true");
-  localStorage.setItem("zc_user_id", window.ZC_BACKEND_USER.id);
-  localStorage.setItem("zc_user_name", window.ZC_BACKEND_USER.fullName || window.ZC_BACKEND_USER.username || "Team Member");
-  localStorage.setItem("zc_user_email", window.ZC_BACKEND_USER.email || "");
-</script>
   <div class="app-shell">
     <aside class="sidebar">
       <div class="brand">
@@ -38,12 +18,12 @@
       </div>
 
       <nav class="menu">
-        <a class="menu-item active" href="index.jsp">Trang chủ</a>
+        <a class="menu-item active" href="projects.html">Trang chủ</a>
         <button class="menu-item project-menu-toggle" id="projectMenuToggle" type="button">Dự án</button>
         <div class="project-submenu" id="sidebarProjectList"></div>
-        <a class="menu-item" href="notifications.jsp">Thông báo</a>
-        <a class="menu-item" href="account.jsp">Tài khoản</a>
-        <a class="menu-item" href="faq.jsp">FQA</a>
+        <a class="menu-item" href="notifications.html">Thông báo</a>
+        <a class="menu-item" href="account.html">Tài khoản</a>
+        <a class="menu-item" href="faq.html">FQA</a>
         <button class="menu-item logout-btn" id="logoutBtn" type="button">Đăng xuất</button>
       </nav>
 
@@ -60,7 +40,7 @@
           <p class="eyebrow">Trang chủ</p>
           <h1>Quản lý dự án</h1>
         </div>
-        <div class="account-box" id="account"><span>Xin chào</span><strong id="currentUserName"><%= loginedUser.getFullName() != null ? loginedUser.getFullName() : loginedUser.getUsername() %></strong></div>
+        <div class="account-box" id="account"><span>Xin chào</span><strong id="currentUserName">Team Member</strong></div>
       </header>
 
       <section class="hero-panel">
