@@ -25,33 +25,37 @@ function getCurrentUser() {
 
 const currentUser = getCurrentUser();
 
-const sampleProject = {
-  id: 'demo-web-tracking',
-  name: 'Web Tracking Behavior',
-  desc: 'Theo dõi tiến độ học tập và làm việc nhóm theo phong cách sàn chứng khoán coin.',
-  deadline: '2026-06-30',
-  status: 'active',
-  creatorId: currentUser.userId,
-  creatorName: currentUser.displayName,
-  members: [
-    { userId: currentUser.userId, name: currentUser.displayName, stockCode: 'LEAD', coin: 128, role: 'leader' },
-    { userId: 'minh', name: 'Minh', stockCode: 'MINH', coin: 106, role: 'member' },
-    { userId: 'binh', name: 'Bình', stockCode: 'BINH', coin: 88, role: 'member' }
-  ],
-  tasks: [
-    { title: 'Dựng trang đăng nhập', assignee: currentUser.userId, deadline: '2026-06-15', status: 'done', update: 'Đã hoàn thành UI login/register.', submission: 'Link demo: /index.html', rating: 5, ratings: {} },
-    { title: 'Thiết kế database', assignee: 'minh', deadline: '2026-06-18', status: 'doing', update: 'Đã có ERD bản đầu.', submission: '', rating: 4, ratings: {} },
-    { title: 'Viết Servlet xử lý project', assignee: 'binh', deadline: '2026-06-17', status: 'late', update: 'Chưa hoàn thành đúng hạn.', submission: '', rating: 2, ratings: {} }
-  ],
-  coinHistory: {
-    labels: ['IPO', 'D1', 'D2', 'D3', 'D4', 'D5'],
-    series: {}
-  },
-  progress: 55
-};
-sampleProject.coinHistory.series[currentUser.userId] = [100, 108, 114, 119, 124, 128];
-sampleProject.coinHistory.series.minh = [100, 102, 101, 104, 105, 106];
-sampleProject.coinHistory.series.binh = [100, 96, 92, 90, 89, 88];
+
+function isDemoProject(project) {
+  const id = String(project?.id || '').toLowerCase();
+  const name = String(project?.name || '').toLowerCase();
+  return id === 'demo-web-tracking' || name.includes('web tracking behavior') || name.includes('dự án mẫu') || name.includes('du an mau');
+}
+
+function removeDemoProjectsFromStorage() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') || []; } catch { list = []; }
+  const clean = list.filter(project => !isDemoProject(project));
+  if (clean.length !== list.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+  return clean;
+}
+
+function createEmptyProject(id = getProjectId()) {
+  return {
+    id: id || 'new-project',
+    name: id ? `Dự án #${id}` : 'Dự án chưa có dữ liệu',
+    desc: 'Chưa có dữ liệu chi tiết. Khi chạy JSP, GroupDetailServlet sẽ render dữ liệu thật từ database.',
+    deadline: '',
+    status: 'active',
+    creatorId: currentUser.userId,
+    creatorName: currentUser.displayName,
+    members: [{ userId: currentUser.userId, name: currentUser.displayName, stockCode: 'LEAD', coin: 100, role: 'leader' }],
+    pendingRequests: [],
+    tasks: [],
+    coinHistory: { labels: ['IPO'], series: { [currentUser.userId]: [100] } },
+    progress: 0
+  };
+}
 
 
 function addNotification(type, title, text) {
@@ -67,22 +71,23 @@ function requireLogin() {
 }
 
 function loadProjects() {
-  try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
-  if (!projects.length) projects = [sampleProject];
+  projects = removeDemoProjectsFromStorage();
 }
 function saveProjects() {
   localStorage.setItem(STORAGE_KEY, JSON.stringify(projects));
 }
 
 function getProjectId() {
-  return new URLSearchParams(window.location.search).get('projectId') || localStorage.getItem('zc_current_project_id') || sampleProject.id;
+  const params = new URLSearchParams(window.location.search);
+  return params.get('projectId') || params.get('groupId') || params.get('id') || localStorage.getItem('zc_current_project_id') || '';
 }
 
 function normalizeProject(project) {
   project.desc = project.desc || project.description || 'Chưa có mô tả dự án.';
   project.creatorId = project.creatorId || project.ownerId || project.createdBy || (project.members?.[0]?.userId) || currentUser.userId;
   project.creatorName = project.creatorName || project.ownerName || project.createdByName || 'Nhóm trưởng';
-  project.members = project.members && project.members.length ? project.members : sampleProject.members;
+  project.members = project.members && project.members.length ? project.members : [{ userId: currentUser.userId, name: currentUser.displayName, stockCode: 'LEAD', coin: 100, role: 'leader' }];
+  project.pendingRequests = project.pendingRequests || [];
   project.tasks = project.tasks && project.tasks.length ? project.tasks : [];
 
   project.members.forEach((member, index) => {
@@ -142,7 +147,7 @@ function normalizeProject(project) {
 
 function findCurrentProject() {
   const id = getProjectId();
-  currentProject = projects.find(p => String(p.id) === String(id)) || projects[0] || sampleProject;
+  currentProject = projects.find(p => String(p.id) === String(id)) || createEmptyProject(id);
   currentProject = normalizeProject(currentProject);
   saveProjects();
 }
@@ -220,6 +225,8 @@ function renderHeader() {
   document.getElementById('projectName').textContent = currentProject.name;
   document.getElementById('projectDesc').textContent = currentProject.desc;
   document.getElementById('sidebarProjectCode').textContent = shortCode(currentProject.name);
+  const groupIdText = document.getElementById('groupIdText');
+  if (groupIdText) groupIdText.textContent = currentProject.id || '--';
 
   const memberCount = currentProject.members.length;
   const taskCount = currentProject.tasks.length;
@@ -282,9 +289,11 @@ function renderMembers() {
         ${member.role === 'leader' ? '<span class="role-pill">Nhóm trưởng</span>' : ''}
         <div class="task-list">${tasks}</div>
         <button class="detail-btn" type="button" data-member-index="${index}">Chi tiết</button>
+        ${isLeader() && member.role !== 'leader' ? `<button class="ghost-btn kick-member-btn" style="width:100%;margin-top:10px" type="button" data-member-id="${member.userId}">Kick thành viên</button>` : ''}
       </article>`;
   }).join('');
   document.querySelectorAll('.detail-btn').forEach(btn => btn.addEventListener('click', () => openTaskModal(Number(btn.dataset.memberIndex))));
+  document.querySelectorAll('.kick-member-btn').forEach(btn => btn.addEventListener('click', () => kickMember(btn.dataset.memberId)));
 }
 
 function drawChart() {
@@ -295,7 +304,7 @@ function drawChart() {
   ctx.clearRect(0, 0, width, height);
 
   const padding = { left: 76, right: 34, top: 42, bottom: 64 };
-  const labels = currentProject.coinHistory.labels;
+  const labels = currentProject.coinHistory.labels?.length ? currentProject.coinHistory.labels : ['IPO'];
   const allValues = Object.values(currentProject.coinHistory.series).flat().map(Number);
   const minValue = Math.floor(Math.min(...allValues, 80) / 10) * 10 - 10;
   const maxValue = Math.ceil(Math.max(...allValues, 130) / 10) * 10 + 10;
@@ -390,9 +399,69 @@ function renderSidebarProjects() {
   if (!sidebarProjectList) return;
   sidebarProjectList.innerHTML = projects.map((project) => {
     const active = String(project.id) === String(currentProject?.id) ? 'active' : '';
-    const detailPage = window.location.pathname.endsWith('.jsp') ? 'project-detail.jsp' : 'project-detail.html';
-    return `<a class="${active}" href="${detailPage}?projectId=${encodeURIComponent(project.id)}" title="${project.name}"><span>${project.name}</span><em>${project.members?.length || 0}</em></a>`;
+    if (window.location.pathname.endsWith('.jsp')) {
+      return `<a class="${active}" href="GroupDetailServlet?groupId=${encodeURIComponent(project.id)}" title="${project.name}"><span>${project.name}</span><em>${project.members?.length || 0}</em></a>`;
+    }
+    return `<a class="${active}" href="project-detail.html?projectId=${encodeURIComponent(project.id)}" title="${project.name}"><span>${project.name}</span><em>${project.members?.length || 0}</em></a>`;
   }).join('') || '<a href="projects.html"><span>Chưa có dự án</span></a>';
+}
+
+
+function renderPendingRequests() {
+  const pendingList = document.getElementById('pendingRequestList');
+  const pendingCount = document.getElementById('pendingCount');
+  if (!pendingList || !pendingCount) return;
+  const requests = currentProject.pendingRequests || [];
+  pendingCount.textContent = requests.length;
+  if (!isLeader()) {
+    pendingList.innerHTML = '<article class="notice-card"><div><h3>Chỉ nhóm trưởng được duyệt thành viên</h3><p>Bạn có thể xem Group ID để gửi cho người khác, nhưng không thể duyệt hoặc kick thành viên.</p></div><time>Member</time></article>';
+    return;
+  }
+  pendingList.innerHTML = requests.length ? requests.map(req => `
+    <article class="notice-card warning">
+      <div><h3>${req.name || req.userId}</h3><p>User ID: ${req.userId} · Gửi lúc: ${req.requestedAt || 'Chưa rõ'}</p></div>
+      <div class="modal-actions" style="margin-top:0">
+        <button class="secondary-btn approve-request-btn" type="button" data-user-id="${req.userId}">Duyệt</button>
+        <button class="ghost-btn reject-request-btn" type="button" data-user-id="${req.userId}">Từ chối</button>
+      </div>
+    </article>`).join('') : '<article class="notice-card"><div><h3>Không có yêu cầu chờ duyệt</h3><p>Khi thành viên nhập Group ID để tham gia, yêu cầu sẽ xuất hiện tại đây.</p></div><time>0 request</time></article>';
+  document.querySelectorAll('.approve-request-btn').forEach(btn => btn.addEventListener('click', () => approveRequest(btn.dataset.userId)));
+  document.querySelectorAll('.reject-request-btn').forEach(btn => btn.addEventListener('click', () => rejectRequest(btn.dataset.userId)));
+}
+
+function approveRequest(userId) {
+  if (!isLeader()) return alert('Chỉ nhóm trưởng được duyệt thành viên.');
+  const req = (currentProject.pendingRequests || []).find(r => String(r.userId) === String(userId));
+  if (!req) return;
+  if (!(currentProject.members || []).some(m => String(m.userId) === String(userId))) {
+    currentProject.members.push({ userId: req.userId, name: req.name || req.userId, stockCode: shortCode(req.name || req.userId), coin: 100, role: 'member' });
+    currentProject.coinHistory.series[req.userId] = currentProject.coinHistory.series[req.userId] || [100];
+  }
+  currentProject.pendingRequests = currentProject.pendingRequests.filter(r => String(r.userId) !== String(userId));
+  saveProjects(); renderAll();
+}
+
+function rejectRequest(userId) {
+  if (!isLeader()) return alert('Chỉ nhóm trưởng được từ chối yêu cầu.');
+  currentProject.pendingRequests = (currentProject.pendingRequests || []).filter(r => String(r.userId) !== String(userId));
+  saveProjects(); renderAll();
+}
+
+function kickMember(userId) {
+  if (!isLeader()) return alert('Chỉ nhóm trưởng được kick thành viên.');
+  const member = currentProject.members.find(m => String(m.userId) === String(userId));
+  if (!member || member.role === 'leader') return;
+  if (!confirm(`Kick ${member.name} khỏi dự án?`)) return;
+  currentProject.members = currentProject.members.filter(m => String(m.userId) !== String(userId));
+  currentProject.tasks = (currentProject.tasks || []).filter(t => String(t.assignee) !== String(userId));
+  if (currentProject.coinHistory?.series) delete currentProject.coinHistory.series[userId];
+  saveProjects(); renderAll();
+}
+
+function copyGroupId() {
+  const groupId = String(currentProject.id || '');
+  if (!groupId) return alert('Chưa có Group ID để copy.');
+  navigator.clipboard?.writeText(groupId).then(() => alert('Đã copy Group ID: ' + groupId)).catch(() => prompt('Copy Group ID:', groupId));
 }
 
 function renderAll() {
@@ -401,6 +470,7 @@ function renderAll() {
   renderTickerAndBoard();
   renderMembers();
   drawChart();
+  renderPendingRequests();
 }
 
 function openTaskModal(index) {
@@ -516,5 +586,6 @@ document.addEventListener('DOMContentLoaded', () => {
   document.getElementById('taskModal').addEventListener('click', e => { if (e.target.id === 'taskModal') e.currentTarget.classList.remove('show'); });
   document.getElementById('saveTaskUpdates').addEventListener('click', saveTaskUpdates);
   document.getElementById('simulateMarketBtn').addEventListener('click', simulateMarket);
+  document.getElementById('copyGroupIdBtn')?.addEventListener('click', copyGroupId);
   if (projectMenuToggle) projectMenuToggle.addEventListener('click', () => sidebarProjectList?.classList.toggle('collapsed'));
 });

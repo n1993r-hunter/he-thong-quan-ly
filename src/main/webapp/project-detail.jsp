@@ -58,6 +58,23 @@
         <article><span>Deadline</span><strong id="deadlineText">--</strong><p>Ngày kết thúc</p></article>
       </section>
 
+      <section class="panel" id="groupAccessPanel">
+        <div class="panel-header">
+          <div>
+            <h2>Group ID & quản lý thành viên</h2>
+            <p>Group ID dùng để mời thành viên tham gia. Nhóm trưởng có thể duyệt yêu cầu và kick thành viên khỏi dự án.</p>
+          </div>
+          <div class="modal-actions" style="margin-top:0">
+            <button class="secondary-btn" id="copyGroupIdBtn" type="button">Copy Group ID</button>
+          </div>
+        </div>
+        <div class="stats-grid" style="margin-bottom:0">
+          <article class="stat-card"><span>Group ID</span><strong id="groupIdText">--</strong><p>Gửi mã này cho người muốn tham gia</p></article>
+          <article class="stat-card"><span>Chờ duyệt</span><strong id="pendingCount">0</strong><p>Yêu cầu tham gia nhóm</p></article>
+        </div>
+        <div class="notice-grid" id="pendingRequestList" style="margin-top:16px"></div>
+      </section>
+
       <section class="panel chart-panel">
         <div class="panel-header"><div><h2>Dashboard tiến độ coin</h2><p>Theo dõi biến động coin của từng thành viên theo thời gian.</p></div><button class="secondary-btn" id="simulateMarketBtn" type="button">Cập nhật tiến độ</button></div>
         <div class="chart-wrap"><canvas id="coinChart" width="1200" height="460" aria-label="Biểu đồ coin theo thời gian"></canvas></div>
