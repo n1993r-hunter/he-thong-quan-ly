@@ -130,10 +130,3 @@ button:disabled{opacity:.55;cursor:not-allowed;transform:none!important;}
   .project-top{flex-direction:column;}
   .detail-link{width:100%;}
 }
-
-/* ===== Join / approval management patch ===== */
-.notice-grid{display:grid;gap:14px}
-.notice-card{display:grid;grid-template-columns:1fr auto;gap:14px;align-items:center;padding:18px;border-radius:20px;background:linear-gradient(145deg,rgba(15,23,42,.82),rgba(3,8,23,.55));border:1px solid rgba(255,255,255,.1)}
-.notice-card.warning{border-color:rgba(250,204,21,.28);background:linear-gradient(145deg,rgba(113,63,18,.20),rgba(15,23,42,.78))}
-.notice-card h3{font-size:16px;margin-bottom:6px}.notice-card p{color:var(--soft);font-size:14px;line-height:1.55}.notice-card time{color:var(--muted);font-size:12px;white-space:nowrap}
-@media(max-width:860px){.notice-card{grid-template-columns:1fr}.notice-card time{white-space:normal}}
