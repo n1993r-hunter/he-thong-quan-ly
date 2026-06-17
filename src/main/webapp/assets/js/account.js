@@ -1,4 +1,8 @@
-(function protect(){if(localStorage.getItem('zc_logged_in')!=='true'&&localStorage.getItem('isLoggedIn')!=='true'&&!window.location.pathname.endsWith('.jsp')) location.href=IS_JSP_PAGE?'LogoutServlet':'index.html';})();
+const IS_JSP_PAGE = window.location.pathname.endsWith('.jsp');
+(function protect(){
+  const loggedIn = localStorage.getItem('zc_logged_in') === 'true' || localStorage.getItem('isLoggedIn') === 'true';
+  if (!loggedIn && !IS_JSP_PAGE) location.href = 'index.html';
+})();
 const nameInput=document.getElementById('displayName'), emailInput=document.getElementById('email'), oldPass=document.getElementById('oldPassword'), newPass=document.getElementById('newPassword'), msg=document.getElementById('accountMessage'), avatar=document.getElementById('avatarPreview'), avatarInput=document.getElementById('avatarInput');
 function slugify(v){return String(v||'user').trim().toLowerCase().normalize('NFD').replace(/[\u0300-\u036f]/g,'').replace(/[^a-z0-9]+/g,'-').replace(/^-|-$/g,'')||'user'}
 function load(){const n=localStorage.getItem('zc_user_name')||'Team Member';const e=localStorage.getItem('zc_user_email')||localStorage.getItem('zc_login_email')||`${slugify(n)}@gmail.com`;nameInput.value=n;emailInput.value=e;document.getElementById('profileName').textContent=n;document.getElementById('profileEmail').textContent=e;const img=localStorage.getItem('zc_user_avatar');avatar.innerHTML=img?`<img src="${img}" alt="Avatar">`:n.split(/\s+/).map(w=>w[0]).join('').slice(0,2).toUpperCase();}

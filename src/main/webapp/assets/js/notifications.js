@@ -1,4 +1,8 @@
-(function protect(){if(localStorage.getItem('zc_logged_in')!=='true'&&localStorage.getItem('isLoggedIn')!=='true'&&!window.location.pathname.endsWith('.jsp')) location.href=IS_JSP_PAGE?'LogoutServlet':'index.html';})();
+const IS_JSP_PAGE = window.location.pathname.endsWith('.jsp');
+(function protect(){
+  const loggedIn = localStorage.getItem('zc_logged_in') === 'true' || localStorage.getItem('isLoggedIn') === 'true';
+  if (!loggedIn && !IS_JSP_PAGE) location.href = 'index.html';
+})();
 const projects=JSON.parse(localStorage.getItem('zc_projects')||'[]');
 function isOverdue(dateString){if(!dateString)return false;const today=new Date();today.setHours(0,0,0,0);const d=new Date(dateString);d.setHours(0,0,0,0);return !Number.isNaN(d.getTime())&&d<today}
 let lateChanged=false;projects.forEach(p=>(p.tasks||[]).forEach(t=>{if(t.status!=='done'&&isOverdue(t.deadline)){t.status='late';lateChanged=true}}));if(lateChanged)localStorage.setItem('zc_projects',JSON.stringify(projects));

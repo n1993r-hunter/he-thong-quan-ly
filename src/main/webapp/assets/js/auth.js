@@ -134,12 +134,11 @@ loginForm.addEventListener('submit', function (event) {
     return;
   }
 
-  localStorage.setItem('zc_logged_in', 'true');
-  localStorage.setItem('zc_login_email', account);
-  localStorage.setItem('zc_user_name', account.includes('@') ? account.split('@')[0] : account);
-  localStorage.setItem('zc_user_id', slugify(account.includes('@') ? account.split('@')[0] : account));
-
   if (isStaticPreview) {
+    localStorage.setItem('zc_logged_in', 'true');
+    localStorage.setItem('zc_login_email', account);
+    localStorage.setItem('zc_user_name', account.includes('@') ? account.split('@')[0] : account);
+    localStorage.setItem('zc_user_id', slugify(account.includes('@') ? account.split('@')[0] : account));
     event.preventDefault();
     setLoading(loginBtn, true, 'Đăng nhập');
     setTimeout(() => {

@@ -69,7 +69,7 @@
           <h2>Theo dõi và quản lý dự án của bạn theo cách riêng</h2>
           <p>Biến việc làm việc nhóm trở nên thú vị và hiệu quả hơn với những ý tưởng mới.</p>
         </div>
-        <button class="primary-btn" id="openCreateModal" type="button">+ Tạo dự án mới</button>
+        <div class="modal-actions" style="margin-top:0"><button class="secondary-btn" id="openJoinModal" type="button">Tham gia dự án</button><button class="primary-btn" id="openCreateModal" type="button">+ Tạo dự án mới</button></div>
       </section>
 
       <section class="stats-grid">
@@ -116,7 +116,7 @@
         <div class="form-group"><label for="projectDesc">Mô tả dự án</label><textarea id="projectDesc" rows="3" placeholder="Mô tả ngắn mục tiêu, phạm vi hoặc yêu cầu của dự án..."></textarea></div>
 
         <div class="section-box">
-          <div class="section-head"><div><h3>Thành viên & coin khởi tạo</h3><p>Mỗi thành viên là một mã coin trong dự án.</p></div><button class="secondary-btn" id="addMemberBtn" type="button">+ Thêm thành viên</button></div>
+          <div class="section-head"><div><h3>Thành viên và coin khởi tạo</h3><p>Mỗi thành viên là một mã coin trong dự án.</p></div><button class="secondary-btn" id="addMemberBtn" type="button">+ Thêm thành viên</button></div>
           <div id="memberList" class="dynamic-list"></div>
         </div>
 
@@ -128,6 +128,27 @@
         <div class="modal-actions">
           <button class="ghost-btn" id="cancelCreateBtn" type="button">Hủy</button>
           <button class="primary-btn" type="submit">Tạo dự án</button>
+        </div>
+      </form>
+    </div>
+  </div>
+
+  <div class="modal" id="joinProjectModal" aria-hidden="true">
+    <div class="modal-content">
+      <button class="close-btn" id="closeJoinModal" type="button">×</button>
+      <div class="modal-title">
+        <span class="tag">Join Project</span>
+        <h2>Tham gia dự án đã tồn tại</h2>
+        <p>Nhập Group ID do nhóm trưởng cung cấp. Yêu cầu sẽ chờ nhóm trưởng duyệt.</p>
+      </div>
+      <form id="joinProjectForm" action="JoinGroupRequestServlet" method="post">
+        <div class="form-group">
+          <label for="joinGroupId">Group ID *</label>
+          <input id="joinGroupId" name="groupId" type="text" placeholder="VD: 12 hoặc 1718620000000" required />
+        </div>
+        <div class="modal-actions">
+          <button class="ghost-btn" id="cancelJoinBtn" type="button">Hủy</button>
+          <button class="primary-btn" type="submit">Gửi yêu cầu tham gia</button>
         </div>
       </form>
     </div>
