@@ -17,3 +17,5 @@ Các file nên thay:
 - assets/js/account.js
 - assets/js/notifications.js
 - assets/css/project-detail.css
+
+- Dọn project demo cũ trong localStorage: nếu browser từng lưu demo-web-tracking/Web Tracking Behavior thì tự xóa khi mở Trang chủ/Chi tiết/Thông báo.

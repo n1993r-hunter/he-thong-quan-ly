@@ -25,6 +25,21 @@ function getCurrentUser() {
 
 const currentUser = getCurrentUser();
 
+
+function isDemoProject(project) {
+  const id = String(project?.id || '').toLowerCase();
+  const name = String(project?.name || '').toLowerCase();
+  return id === 'demo-web-tracking' || name.includes('web tracking behavior') || name.includes('dự án mẫu') || name.includes('du an mau');
+}
+
+function removeDemoProjectsFromStorage() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') || []; } catch { list = []; }
+  const clean = list.filter(project => !isDemoProject(project));
+  if (clean.length !== list.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+  return clean;
+}
+
 function createEmptyProject(id = getProjectId()) {
   return {
     id: id || 'new-project',
@@ -56,8 +71,7 @@ function requireLogin() {
 }
 
 function loadProjects() {
-  try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY)) || []; } catch { projects = []; }
-  
+  projects = removeDemoProjectsFromStorage();
 }
 
 function saveProjects() {
@@ -386,8 +400,10 @@ function renderSidebarProjects() {
   if (!sidebarProjectList) return;
   sidebarProjectList.innerHTML = projects.map((project) => {
     const active = String(project.id) === String(currentProject?.id) ? 'active' : '';
-    const detailPage = window.location.pathname.endsWith('.jsp') ? 'project-detail.jsp' : 'project-detail.html';
-    return `<a class="${active}" href="${detailPage}?projectId=${encodeURIComponent(project.id)}" title="${project.name}"><span>${project.name}</span><em>${project.members?.length || 0}</em></a>`;
+    if (window.location.pathname.endsWith('.jsp')) {
+      return `<a class="${active}" href="GroupDetailServlet?groupId=${encodeURIComponent(project.id)}" title="${project.name}"><span>${project.name}</span><em>${project.members?.length || 0}</em></a>`;
+    }
+    return `<a class="${active}" href="project-detail.html?projectId=${encodeURIComponent(project.id)}" title="${project.name}"><span>${project.name}</span><em>${project.members?.length || 0}</em></a>`;
   }).join('') || '<a href="projects.html"><span>Chưa có dự án</span></a>';
 }
 

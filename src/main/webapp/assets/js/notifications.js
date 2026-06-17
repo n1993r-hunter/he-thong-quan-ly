@@ -3,7 +3,8 @@ const IS_JSP_PAGE = window.location.pathname.endsWith('.jsp');
   const loggedIn = localStorage.getItem('zc_logged_in') === 'true' || localStorage.getItem('isLoggedIn') === 'true';
   if (!loggedIn && !IS_JSP_PAGE) location.href = 'index.html';
 })();
-const projects=JSON.parse(localStorage.getItem('zc_projects')||'[]');
+function isDemoProject(project){const id=String(project?.id||'').toLowerCase();const name=String(project?.name||'').toLowerCase();return id==='demo-web-tracking'||name.includes('web tracking behavior')||name.includes('dự án mẫu')||name.includes('du an mau');}
+let projects=[];try{projects=JSON.parse(localStorage.getItem('zc_projects')||'[]').filter(p=>!isDemoProject(p));localStorage.setItem('zc_projects',JSON.stringify(projects));}catch{projects=[];}
 function isOverdue(dateString){if(!dateString)return false;const today=new Date();today.setHours(0,0,0,0);const d=new Date(dateString);d.setHours(0,0,0,0);return !Number.isNaN(d.getTime())&&d<today}
 let lateChanged=false;projects.forEach(p=>(p.tasks||[]).forEach(t=>{if(t.status!=='done'&&isOverdue(t.deadline)){t.status='late';lateChanged=true}}));if(lateChanged)localStorage.setItem('zc_projects',JSON.stringify(projects));
 const manual=JSON.parse(localStorage.getItem('zc_notifications')||'[]');

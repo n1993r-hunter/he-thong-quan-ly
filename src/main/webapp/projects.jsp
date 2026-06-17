@@ -110,10 +110,10 @@
       <form id="createProjectForm" action="GroupServlet" method="post">
         <div class="form-grid">
           <div class="form-group"><label for="projectName">Tên dự án *</label><input id="projectName" name="groupName" type="text" placeholder="VD: Web Tracking Behavior" required /></div>
-          <div class="form-group"><label for="projectDeadline">Deadline *</label><input id="projectDeadline" type="date" required /></div>
+          <div class="form-group"><label for="projectDeadline">Deadline *</label><input id="projectDeadline" name="deadline" type="date" required /></div>
         </div>
 
-        <div class="form-group"><label for="projectDesc">Mô tả dự án</label><textarea id="projectDesc" rows="3" placeholder="Mô tả ngắn mục tiêu, phạm vi hoặc yêu cầu của dự án..."></textarea></div>
+        <div class="form-group"><label for="projectDesc">Mô tả dự án</label><textarea id="projectDesc" name="description" rows="3" placeholder="Mô tả ngắn mục tiêu, phạm vi hoặc yêu cầu của dự án..."></textarea></div>
 
         <div class="section-box">
           <div class="section-head"><div><h3>Thành viên và coin khởi tạo</h3><p>Mỗi thành viên là một mã coin trong dự án.</p></div><button class="secondary-btn" id="addMemberBtn" type="button">+ Thêm thành viên</button></div>

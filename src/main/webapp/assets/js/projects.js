@@ -51,9 +51,24 @@ function getCurrentUser() {
 const currentUser = getCurrentUser();
 if (currentUserName) currentUserName.textContent = currentUser.displayName;
 
+
+function isDemoProject(project) {
+  const id = String(project?.id || '').toLowerCase();
+  const name = String(project?.name || '').toLowerCase();
+  return id === 'demo-web-tracking' || name.includes('web tracking behavior') || name.includes('dự án mẫu') || name.includes('du an mau');
+}
+
+function removeDemoProjectsFromStorage() {
+  let list = [];
+  try { list = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]') || []; } catch { list = []; }
+  const clean = list.filter(project => !isDemoProject(project));
+  if (clean.length !== list.length) localStorage.setItem(STORAGE_KEY, JSON.stringify(clean));
+  return clean;
+}
+
 // ĐÃ XÓA PROJECT MẪU: user mới vào sẽ thấy danh sách trống.
-let projects = [];
-try { projects = JSON.parse(localStorage.getItem(STORAGE_KEY) || '[]'); } catch { projects = []; }
+// Nếu browser từng lưu demo cũ trong localStorage, tự dọn để không hiện lại.
+let projects = removeDemoProjectsFromStorage();
 
 function saveProjects() { localStorage.setItem(STORAGE_KEY, JSON.stringify(projects)); }
 function formatDate(dateString) {
