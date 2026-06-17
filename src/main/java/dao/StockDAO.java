@@ -1,6 +1,8 @@
 
 package dao;
-
+import java.util.ArrayList;
+import java.util.List;
+import model.StockHistoryView;
 import java.sql.Connection;
 import java.sql.PreparedStatement;
 import java.sql.ResultSet;
@@ -84,6 +86,64 @@ public class StockDAO {
             rs.close();
             ps.close();
             conn.close();
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    public List<StockHistoryView> getStockHistoryByGroupId(int groupId) {
+        List<StockHistoryView> list = new ArrayList<>();
+
+        String sql =
+                "SELECT " +
+                "h.history_id, h.stock_id, h.task_id, h.source_type, " +
+                "h.price_before, h.price_after, h.price_change, h.change_reason, h.recorded_at, " +
+                "s.user_id, s.stock_code, " +
+                "u.full_name, u.username " +
+                "FROM STOCK_PRICE_HISTORY h " +
+                "JOIN STOCKS s ON h.stock_id = s.stock_id " +
+                "JOIN USERS u ON s.user_id = u.user_id " +
+                "WHERE s.group_id = ? " +
+                "ORDER BY h.recorded_at ASC, h.history_id ASC";
+
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) {
+                return list;
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(sql)) {
+                ps.setInt(1, groupId);
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    while (rs.next()) {
+                        StockHistoryView view = new StockHistoryView();
+
+                        view.setHistoryId(rs.getInt("history_id"));
+                        view.setStockId(rs.getInt("stock_id"));
+                        view.setUserId(rs.getInt("user_id"));
+                        view.setStockCode(rs.getString("stock_code"));
+
+                        int taskId = rs.getInt("task_id");
+                        if (!rs.wasNull()) {
+                            view.setTaskId(taskId);
+                        }
+
+                        view.setSourceType(rs.getString("source_type"));
+                        view.setPriceBefore(rs.getDouble("price_before"));
+                        view.setPriceAfter(rs.getDouble("price_after"));
+                        view.setPriceChange(rs.getDouble("price_change"));
+                        view.setChangeReason(rs.getString("change_reason"));
+                        view.setRecordedAt(rs.getTimestamp("recorded_at"));
+
+                        view.setFullName(rs.getString("full_name"));
+                        view.setUsername(rs.getString("username"));
+
+                        list.add(view);
+                    }
+                }
+            }
 
         } catch (Exception e) {
             e.printStackTrace();

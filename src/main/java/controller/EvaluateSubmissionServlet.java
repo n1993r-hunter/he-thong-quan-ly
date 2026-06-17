@@ -8,6 +8,7 @@ import java.nio.file.Path;
 import com.google.gson.Gson;
 import com.google.gson.JsonObject;
 
+import service.ScoreUpdateService;
 import dao.AIEvaluationDAO;
 import dao.GroupDAO;
 import jakarta.servlet.ServletException;
@@ -92,6 +93,15 @@ public class EvaluateSubmissionServlet extends HttpServlet {
             AIEvaluationResult result = llmService.evaluateSubmission(ctx, fileContent);
 
             int evaluationId = aiDAO.insertEvaluation(ctx, result);
+            ScoreUpdateService scoreService = new ScoreUpdateService();
+
+            boolean scoreUpdated = scoreService.recalculateTaskScore(
+                    ctx.getTaskId(),
+                    ctx.getUserId(),
+                    ctx.getGroupId(),
+                    "ai_review",
+                    "Cập nhật điểm từ AI Review"
+            );
 
             if (evaluationId <= 0) {
                 response.setStatus(HttpServletResponse.SC_INTERNAL_SERVER_ERROR);
@@ -102,6 +112,7 @@ public class EvaluateSubmissionServlet extends HttpServlet {
             }
 
             json.addProperty("success", true);
+            json.addProperty("scoreUpdated", scoreUpdated);
             json.addProperty("message", "AI đã chấm bài thành công.");
             json.addProperty("evaluationId", evaluationId);
             json.addProperty("submissionId", ctx.getSubmissionId());

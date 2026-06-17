@@ -35,7 +35,7 @@ public class JoinGroupRequestServlet extends HttpServlet {
         try {
             groupId = Integer.parseInt(groupIdRaw);
         } catch (Exception e) {
-            response.sendRedirect("index.jsp?msg=invalid_group");
+            response.sendRedirect("MyGroupsServlet?msg=invalid_group");
             return;
         }
 
@@ -44,15 +44,15 @@ public class JoinGroupRequestServlet extends HttpServlet {
         String result = dao.sendJoinRequest(groupId, currentUser.getUserId());
 
         if ("sent".equals(result)) {
-            response.sendRedirect("index.jsp?msg=join_sent");
+            response.sendRedirect("MyGroupsServlet?msg=join_sent");
         } else if ("group_not_found".equals(result)) {
-            response.sendRedirect("index.jsp?msg=join_group_not_found");
+            response.sendRedirect("MyGroupsServlet?msg=join_group_not_found");
         } else if ("already_member".equals(result)) {
-            response.sendRedirect("index.jsp?msg=join_already_member");
+            response.sendRedirect("MyGroupsServlet?msg=join_already_member");
         } else if ("already_pending".equals(result)) {
-            response.sendRedirect("index.jsp?msg=join_already_pending");
+            response.sendRedirect("MyGroupsServlet?msg=join_already_pending");
         } else {
-            response.sendRedirect("index.jsp?msg=join_fail");
+            response.sendRedirect("MyGroupsServlet?msg=join_fail");
         }
     }
 }

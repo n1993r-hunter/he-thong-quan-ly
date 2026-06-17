@@ -20,6 +20,8 @@ public class MyGroupsServlet extends HttpServlet {
     protected void doGet(HttpServletRequest request, HttpServletResponse response)
             throws ServletException, IOException {
 
+        request.setCharacterEncoding("UTF-8");
+
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("loginedUser");
 
@@ -32,6 +34,6 @@ public class MyGroupsServlet extends HttpServlet {
         List<Group> groups = dao.getGroupsByUserId(currentUser.getUserId());
 
         request.setAttribute("groups", groups);
-        request.getRequestDispatcher("my-groups.jsp").forward(request, response);
+        request.getRequestDispatcher("index.jsp").forward(request, response);
     }
 }

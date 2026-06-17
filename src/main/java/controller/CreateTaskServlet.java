@@ -1,57 +1,119 @@
 package controller;
 
+import java.io.IOException;
+
+import dao.ActivityLogDAO;
+import dao.GroupDAO;
+import dao.TaskDAO;
 import jakarta.servlet.ServletException;
 import jakarta.servlet.annotation.WebServlet;
 import jakarta.servlet.http.HttpServlet;
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
 import jakarta.servlet.http.HttpSession;
-import java.io.IOException;
-
-import dao.TaskDAO;
 import model.User;
 
 @WebServlet("/CreateTaskServlet")
 public class CreateTaskServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         request.setCharacterEncoding("UTF-8");
-        
-        // 1. Bảo mật: Bắt buộc đăng nhập
+
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("loginedUser");
+
         if (currentUser == null) {
             response.sendRedirect("login.jsp");
             return;
         }
 
+        int groupId = -1;
+
         try {
-            // 2. Nhận dữ liệu từ Frontend
-            int groupId = Integer.parseInt(request.getParameter("groupId"));
+            groupId = Integer.parseInt(request.getParameter("groupId"));
+
+            GroupDAO groupDAO = new GroupDAO();
+
+            if (!groupDAO.isLeader(currentUser.getUserId(), groupId)) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=not_leader");
+                return;
+            }
+
             String title = request.getParameter("title");
             String description = request.getParameter("description");
-            
-            // Mẹo: HTML5 thẻ <input type="datetime-local"> thường trả về dạng 'YYYY-MM-DDTHH:MM'
-            // MySQL cần 'YYYY-MM-DD HH:MM:SS', nên ta replace chữ 'T' thành dấu cách.
             String deadlineRaw = request.getParameter("deadline");
-            String deadline = deadlineRaw != null ? deadlineRaw.replace("T", " ") + ":00" : null;
+            String assigneeIdRaw = request.getParameter("assigneeId");
 
-            // 3. Gọi DAO xử lý
-            TaskDAO dao = new TaskDAO();
-            boolean isSuccess = dao.createTask(groupId, title, description, currentUser.getUserId(), deadline);
-
-            // 4. Trả kết quả về Frontend
-            if (isSuccess) {
-            	dao.ActivityLogDAO logDao = new dao.ActivityLogDAO();
-                logDao.logActivity(currentUser.getUserId(), groupId, null, "CREATED_TASK");
-                response.sendRedirect("group_detail.jsp?id=" + groupId + "&msg=task_created");
-            } else {
-                response.sendRedirect("group_detail.jsp?id=" + groupId + "&msg=task_fail");
+            if (title == null || title.trim().isEmpty()) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=task_title_empty");
+                return;
             }
+
+            String deadline = normalizeDeadline(deadlineRaw);
+
+            if (deadline == null) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=deadline_empty");
+                return;
+            }
+
+            TaskDAO taskDAO = new TaskDAO();
+
+            int taskId = taskDAO.createTaskReturnId(
+                    groupId,
+                    title.trim(),
+                    description,
+                    currentUser.getUserId(),
+                    deadline
+            );
+
+            if (taskId <= 0) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=task_fail");
+                return;
+            }
+
+            if (assigneeIdRaw != null && !assigneeIdRaw.trim().isEmpty()) {
+                int assigneeId = Integer.parseInt(assigneeIdRaw);
+                taskDAO.assignTask(taskId, assigneeId);
+            }
+
+            ActivityLogDAO logDao = new ActivityLogDAO();
+            logDao.logActivity(currentUser.getUserId(), groupId, taskId, "CREATED_TASK");
+
+            response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=task_created");
+
         } catch (Exception e) {
-            // Lỗi khi parse số hoặc thiếu dữ liệu
-            response.sendRedirect("index.jsp?msg=invalid_data");
+            e.printStackTrace();
+
+            if (groupId > 0) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=invalid_data");
+            } else {
+                response.sendRedirect("MyGroupsServlet?msg=invalid_data");
+            }
         }
+    }
+
+    private String normalizeDeadline(String deadlineRaw) {
+        if (deadlineRaw == null || deadlineRaw.trim().isEmpty()) {
+            return null;
+        }
+
+        String deadline = deadlineRaw.trim();
+
+        if (deadline.contains("T")) {
+            deadline = deadline.replace("T", " ");
+        }
+
+        if (deadline.length() == 16) {
+            deadline += ":00";
+        }
+
+        if (deadline.length() == 10) {
+            deadline += " 23:59:00";
+        }
+
+        return deadline;
     }
 }

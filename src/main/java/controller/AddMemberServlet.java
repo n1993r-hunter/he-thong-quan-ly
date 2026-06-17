@@ -15,35 +15,53 @@ import model.User;
 public class AddMemberServlet extends HttpServlet {
     private static final long serialVersionUID = 1L;
 
-    protected void doPost(HttpServletRequest request, HttpServletResponse response) throws ServletException, IOException {
+    protected void doPost(HttpServletRequest request, HttpServletResponse response)
+            throws ServletException, IOException {
+
         request.setCharacterEncoding("UTF-8");
-        
-        // 1. Bảo mật: Yêu cầu đăng nhập
+
         HttpSession session = request.getSession();
         User currentUser = (User) session.getAttribute("loginedUser");
+
         if (currentUser == null) {
             response.sendRedirect("login.jsp");
             return;
         }
 
+        int groupId = -1;
+
         try {
-            // 2. Nhận dữ liệu (Chỉ còn ID Nhóm và Username)
-            int groupId = Integer.parseInt(request.getParameter("groupId"));
-            String newUsername = request.getParameter("username");
+            groupId = Integer.parseInt(request.getParameter("groupId"));
+            String username = request.getParameter("username");
 
-            // 3. Gọi DAO xử lý
-            GroupDAO dao = new GroupDAO();
-            // Đã bỏ tham số role
-            boolean isSuccess = dao.addMemberToGroup(groupId, newUsername);
-
-            // 4. Trả kết quả về Frontend
-            if (isSuccess) {
-                response.sendRedirect("group_detail.jsp?id=" + groupId + "&msg=add_success");
-            } else {
-                response.sendRedirect("group_detail.jsp?id=" + groupId + "&msg=add_fail");
+            if (username == null || username.trim().isEmpty()) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=username_empty");
+                return;
             }
-        } catch (NumberFormatException e) {
-            response.sendRedirect("group_detail.jsp?msg=invalid_group");
+
+            GroupDAO dao = new GroupDAO();
+
+            if (!dao.isLeader(currentUser.getUserId(), groupId)) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=not_leader");
+                return;
+            }
+
+            boolean success = dao.addMemberToGroup(groupId, username.trim());
+
+            if (success) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=add_member_success");
+            } else {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=add_member_fail");
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+
+            if (groupId > 0) {
+                response.sendRedirect("GroupDetailServlet?groupId=" + groupId + "&msg=add_member_error");
+            } else {
+                response.sendRedirect("MyGroupsServlet?msg=add_member_error");
+            }
         }
     }
 }

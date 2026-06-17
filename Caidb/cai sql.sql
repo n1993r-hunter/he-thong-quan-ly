@@ -1,5 +1,5 @@
 -- =========================================================
--- DATABASE FINAL: Hệ thống đánh giá hiệu suất nhóm
+-- DATABASE FINAL RÚT GỌN: Hệ thống đánh giá hiệu suất nhóm
 -- Mô hình: Mỗi thành viên là một "mã cổ phiếu cá nhân"
 -- Stock ban đầu = 100
 -- Không zero-sum: người này tăng điểm không làm người khác bị trừ
@@ -55,7 +55,27 @@ CREATE TABLE GROUP_MEMBERS (
 );
 
 -- =========================================================
--- 4. TASKS
+-- 4. GROUP_JOIN_REQUESTS
+-- Người dùng gửi yêu cầu tham gia nhóm
+-- =========================================================
+CREATE TABLE GROUP_JOIN_REQUESTS (
+    request_id INT AUTO_INCREMENT PRIMARY KEY,
+    group_id INT NOT NULL,
+    user_id INT NOT NULL,
+    status VARCHAR(20) DEFAULT 'pending',
+    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
+    reviewed_at DATETIME,
+    reviewed_by INT,
+
+    FOREIGN KEY (group_id) REFERENCES `GROUPS`(group_id),
+    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
+    FOREIGN KEY (reviewed_by) REFERENCES USERS(user_id),
+
+    UNIQUE (group_id, user_id)
+);
+
+-- =========================================================
+-- 5. TASKS
 -- =========================================================
 CREATE TABLE TASKS (
     task_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -72,7 +92,7 @@ CREATE TABLE TASKS (
 );
 
 -- =========================================================
--- 5. TASK_ASSIGNMENTS
+-- 6. TASK_ASSIGNMENTS
 -- Một task có thể giao cho nhiều người
 -- Một người không bị giao trùng cùng một task
 -- =========================================================
@@ -93,51 +113,7 @@ CREATE TABLE TASK_ASSIGNMENTS (
 );
 
 -- =========================================================
--- 6. TASK_PROGRESS_LOGS
--- =========================================================
-CREATE TABLE TASK_PROGRESS_LOGS (
-    log_id INT AUTO_INCREMENT PRIMARY KEY,
-    assignment_id INT NOT NULL,
-    updated_by INT NOT NULL,
-    old_progress INT,
-    new_progress INT NOT NULL,
-    note TEXT,
-    updated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (assignment_id) REFERENCES TASK_ASSIGNMENTS(assignment_id),
-    FOREIGN KEY (updated_by) REFERENCES USERS(user_id),
-
-    CHECK (new_progress BETWEEN 0 AND 100)
-);
-
--- =========================================================
--- 7. SUBTASKS
--- =========================================================
-CREATE TABLE SUBTASKS (
-    subtask_id INT AUTO_INCREMENT PRIMARY KEY,
-    task_id INT NOT NULL,
-    title VARCHAR(255) NOT NULL,
-    status VARCHAR(20) DEFAULT 'todo',
-
-    FOREIGN KEY (task_id) REFERENCES TASKS(task_id)
-);
-
--- =========================================================
--- 8. TASK_COMMENTS
--- =========================================================
-CREATE TABLE TASK_COMMENTS (
-    comment_id INT AUTO_INCREMENT PRIMARY KEY,
-    task_id INT NOT NULL,
-    user_id INT NOT NULL,
-    content TEXT NOT NULL,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (task_id) REFERENCES TASKS(task_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id)
-);
-
--- =========================================================
--- 9. STOCKS
+-- 7. STOCKS
 -- Mỗi thành viên trong mỗi nhóm có một mã cổ phiếu riêng
 -- current_price = giá trị hiệu suất hiện tại
 -- Mặc định 100 = 100% ban đầu
@@ -158,7 +134,7 @@ CREATE TABLE STOCKS (
 );
 
 -- =========================================================
--- 10. STOCK_PRICE_HISTORY
+-- 8. STOCK_PRICE_HISTORY
 -- Lưu lịch sử tăng/giảm stock để vẽ biểu đồ
 -- Không zero-sum: chỉ cập nhật stock của chính người được đánh giá
 -- =========================================================
@@ -178,7 +154,7 @@ CREATE TABLE STOCK_PRICE_HISTORY (
 );
 
 -- =========================================================
--- 11. TASK_SUBMISSIONS
+-- 9. TASK_SUBMISSIONS
 -- Một người có thể nộp lại file nhiều lần cho cùng một task
 -- submit_version dùng để phân biệt lần nộp 1, 2, 3...
 -- =========================================================
@@ -199,10 +175,10 @@ CREATE TABLE TASK_SUBMISSIONS (
 );
 
 -- =========================================================
--- 12. AI_EVALUATIONS
+-- 10. AI_EVALUATIONS
 -- AI chấm từng lần nộp file
 -- Một người có thể nộp nhiều lần, AI chấm nhiều lần
--- Khi tính stock nên lấy lần AI tốt nhất hoặc lần mới nhất trong code Java
+-- Khi tính stock đang lấy AI tốt nhất trong code Java
 -- =========================================================
 CREATE TABLE AI_EVALUATIONS (
     ai_evaluation_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -225,7 +201,7 @@ CREATE TABLE AI_EVALUATIONS (
 );
 
 -- =========================================================
--- 13. PEER_REVIEWS
+-- 11. PEER_REVIEWS
 -- Thành viên đánh giá chéo nhau bằng sao 1-5
 -- Khi tính điểm sẽ lấy sao trung bình của mọi người đánh giá người đó
 -- =========================================================
@@ -251,7 +227,7 @@ CREATE TABLE PEER_REVIEWS (
 );
 
 -- =========================================================
--- 14. LEADER_REVIEWS
+-- 12. LEADER_REVIEWS
 -- Nhóm trưởng đánh giá thành viên bằng sao 1-5
 -- =========================================================
 CREATE TABLE LEADER_REVIEWS (
@@ -276,7 +252,7 @@ CREATE TABLE LEADER_REVIEWS (
 );
 
 -- =========================================================
--- 15. SCORING_WEIGHTS
+-- 13. SCORING_WEIGHTS
 -- Trọng số tính stock_change
 -- AI 40%, Peer 30%, Leader 30%
 -- =========================================================
@@ -287,7 +263,7 @@ CREATE TABLE SCORING_WEIGHTS (
 );
 
 -- =========================================================
--- 16. REWARD_PENALTY_RULES
+-- 14. REWARD_PENALTY_RULES
 -- Quy đổi sao thành điểm cộng/trừ
 -- 5 sao = +20
 -- 4 sao = +10
@@ -306,7 +282,7 @@ CREATE TABLE REWARD_PENALTY_RULES (
 );
 
 -- =========================================================
--- 17. TASK_SCORE_SUMMARY
+-- 15. TASK_SCORE_SUMMARY
 -- Lưu kết quả tổng hợp điểm của từng người trong từng task
 -- Dùng để tránh cộng stock nhiều lần sai
 -- =========================================================
@@ -337,7 +313,9 @@ CREATE TABLE TASK_SCORE_SUMMARY (
 );
 
 -- =========================================================
--- 18. ACTIVITY_LOGS
+-- 16. ACTIVITY_LOGS
+-- Ghi log hoạt động cơ bản
+-- Giữ lại vì Java đang có ActivityLogDAO
 -- =========================================================
 CREATE TABLE ACTIVITY_LOGS (
     activity_id INT AUTO_INCREMENT PRIMARY KEY,
@@ -350,63 +328,6 @@ CREATE TABLE ACTIVITY_LOGS (
     FOREIGN KEY (user_id) REFERENCES USERS(user_id),
     FOREIGN KEY (group_id) REFERENCES `GROUPS`(group_id),
     FOREIGN KEY (task_id) REFERENCES TASKS(task_id)
-);
-
--- =========================================================
--- 19. GROUP_TEACHER_SCORES
--- Lưu điểm thầy cô cho cả nhóm
--- =========================================================
-CREATE TABLE GROUP_TEACHER_SCORES (
-    teacher_score_id INT AUTO_INCREMENT PRIMARY KEY,
-    group_id INT NOT NULL,
-    teacher_score FLOAT NOT NULL,
-    note TEXT,
-    created_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (group_id) REFERENCES `GROUPS`(group_id),
-
-    CHECK (teacher_score BETWEEN 0 AND 10)
-);
-
--- =========================================================
--- 20. MEMBER_FINAL_SCORES
--- Điểm cuối cùng của từng thành viên
--- Công thức:
--- final_score = current_price / average_group_price * teacher_score
--- Trong code Java nên chặn final_score tối đa là 10
--- =========================================================
-CREATE TABLE MEMBER_FINAL_SCORES (
-    final_score_id INT AUTO_INCREMENT PRIMARY KEY,
-    teacher_score_id INT NOT NULL,
-    group_id INT NOT NULL,
-    user_id INT NOT NULL,
-
-    stock_price FLOAT NOT NULL,
-    group_average_price FLOAT NOT NULL,
-    teacher_score FLOAT NOT NULL,
-    final_score FLOAT NOT NULL,
-
-    calculated_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-
-    FOREIGN KEY (teacher_score_id) REFERENCES GROUP_TEACHER_SCORES(teacher_score_id),
-    FOREIGN KEY (group_id) REFERENCES `GROUPS`(group_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id)
-);
-
-CREATE TABLE GROUP_JOIN_REQUESTS (
-    request_id INT AUTO_INCREMENT PRIMARY KEY,
-    group_id INT NOT NULL,
-    user_id INT NOT NULL,
-    status VARCHAR(20) DEFAULT 'pending',
-    requested_at DATETIME DEFAULT CURRENT_TIMESTAMP,
-    reviewed_at DATETIME,
-    reviewed_by INT,
-
-    FOREIGN KEY (group_id) REFERENCES `GROUPS`(group_id),
-    FOREIGN KEY (user_id) REFERENCES USERS(user_id),
-    FOREIGN KEY (reviewed_by) REFERENCES USERS(user_id),
-
-    UNIQUE (group_id, user_id)
 );
 
 -- =========================================================
@@ -432,5 +353,6 @@ VALUES
 -- =========================================================
 -- KIỂM TRA NHANH SAU KHI CHẠY
 -- =========================================================
+
 SELECT * FROM SCORING_WEIGHTS;
 SELECT * FROM REWARD_PENALTY_RULES;

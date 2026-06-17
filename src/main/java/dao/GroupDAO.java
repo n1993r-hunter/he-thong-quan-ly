@@ -269,7 +269,6 @@ public class GroupDAO {
     }
 
 
-    // Leader kick thành viên khỏi nhóm
     public boolean kickMemberFromGroup(int groupId, int memberUserId, int leaderId) {
         if (!isLeader(leaderId, groupId)) {
             return false;
@@ -284,6 +283,11 @@ public class GroupDAO {
 
         try {
             conn = DBConnection.getConnection();
+
+            if (conn == null) {
+                return false;
+            }
+
             conn.setAutoCommit(false);
 
             // Xóa dữ liệu AI liên quan đến bài nộp của member trong nhóm
@@ -303,15 +307,6 @@ public class GroupDAO {
                 groupId, memberUserId
             );
 
-            // Xóa log tiến độ của member
-            executeUpdate(conn,
-                "DELETE tpl FROM TASK_PROGRESS_LOGS tpl " +
-                "JOIN TASK_ASSIGNMENTS ta ON tpl.assignment_id = ta.assignment_id " +
-                "JOIN TASKS t ON ta.task_id = t.task_id " +
-                "WHERE t.group_id = ? AND ta.user_id = ?",
-                groupId, memberUserId
-            );
-
             // Xóa tổng hợp điểm task của member
             executeUpdate(conn,
                 "DELETE FROM TASK_SCORE_SUMMARY WHERE group_id = ? AND user_id = ?",
@@ -326,32 +321,29 @@ public class GroupDAO {
                 groupId, memberUserId
             );
 
-            // Xóa review liên quan đến member
+            // Xóa peer review liên quan đến member
             executeUpdate(conn,
-                "DELETE FROM PEER_REVIEWS WHERE group_id = ? AND (reviewer_id = ? OR reviewed_user_id = ?)",
+                "DELETE FROM PEER_REVIEWS " +
+                "WHERE group_id = ? AND (reviewer_id = ? OR reviewed_user_id = ?)",
                 groupId, memberUserId, memberUserId
             );
 
+            // Xóa leader review liên quan đến member
             executeUpdate(conn,
-                "DELETE FROM LEADER_REVIEWS WHERE group_id = ? AND (leader_id = ? OR reviewed_user_id = ?)",
+                "DELETE FROM LEADER_REVIEWS " +
+                "WHERE group_id = ? AND (leader_id = ? OR reviewed_user_id = ?)",
                 groupId, memberUserId, memberUserId
             );
 
-            // Xóa comment của member trong task thuộc nhóm
+            // Xóa yêu cầu gia nhập của member trong nhóm nếu có
             executeUpdate(conn,
-                "DELETE FROM TASK_COMMENTS WHERE user_id = ? AND task_id IN (SELECT task_id FROM TASKS WHERE group_id = ?)",
-                memberUserId, groupId
+                "DELETE FROM GROUP_JOIN_REQUESTS WHERE group_id = ? AND user_id = ?",
+                groupId, memberUserId
             );
 
             // Xóa activity log
             executeUpdate(conn,
                 "DELETE FROM ACTIVITY_LOGS WHERE group_id = ? AND user_id = ?",
-                groupId, memberUserId
-            );
-
-            // Xóa điểm cuối nếu có
-            executeUpdate(conn,
-                "DELETE FROM MEMBER_FINAL_SCORES WHERE group_id = ? AND user_id = ?",
                 groupId, memberUserId
             );
 
@@ -405,7 +397,6 @@ public class GroupDAO {
     }
 
 
-    // Leader giải thể nhóm
     public boolean dissolveGroup(int groupId, int leaderId) {
         if (!isLeader(leaderId, groupId)) {
             return false;
@@ -415,15 +406,29 @@ public class GroupDAO {
 
         try {
             conn = DBConnection.getConnection();
+
+            if (conn == null) {
+                return false;
+            }
+
             conn.setAutoCommit(false);
 
-            // Xóa điểm cuối và điểm thầy cô
-            executeUpdate(conn, "DELETE FROM MEMBER_FINAL_SCORES WHERE group_id = ?", groupId);
-            executeUpdate(conn, "DELETE FROM GROUP_TEACHER_SCORES WHERE group_id = ?", groupId);
+            // Xóa yêu cầu gia nhập nhóm
+            executeUpdate(conn,
+                "DELETE FROM GROUP_JOIN_REQUESTS WHERE group_id = ?",
+                groupId
+            );
 
-            // Xóa review
-            executeUpdate(conn, "DELETE FROM PEER_REVIEWS WHERE group_id = ?", groupId);
-            executeUpdate(conn, "DELETE FROM LEADER_REVIEWS WHERE group_id = ?", groupId);
+            // Xóa peer review và leader review
+            executeUpdate(conn,
+                "DELETE FROM PEER_REVIEWS WHERE group_id = ?",
+                groupId
+            );
+
+            executeUpdate(conn,
+                "DELETE FROM LEADER_REVIEWS WHERE group_id = ?",
+                groupId
+            );
 
             // Xóa AI evaluations
             executeUpdate(conn,
@@ -434,14 +439,8 @@ public class GroupDAO {
             );
 
             // Xóa task score summary
-            executeUpdate(conn, "DELETE FROM TASK_SCORE_SUMMARY WHERE group_id = ?", groupId);
-
-            // Xóa progress logs
             executeUpdate(conn,
-                "DELETE tpl FROM TASK_PROGRESS_LOGS tpl " +
-                "JOIN TASK_ASSIGNMENTS ta ON tpl.assignment_id = ta.assignment_id " +
-                "JOIN TASKS t ON ta.task_id = t.task_id " +
-                "WHERE t.group_id = ?",
+                "DELETE FROM TASK_SCORE_SUMMARY WHERE group_id = ?",
                 groupId
             );
 
@@ -458,17 +457,6 @@ public class GroupDAO {
                 "DELETE ta FROM TASK_ASSIGNMENTS ta " +
                 "JOIN TASKS t ON ta.task_id = t.task_id " +
                 "WHERE t.group_id = ?",
-                groupId
-            );
-
-            // Xóa comment, subtask
-            executeUpdate(conn,
-                "DELETE FROM TASK_COMMENTS WHERE task_id IN (SELECT task_id FROM TASKS WHERE group_id = ?)",
-                groupId
-            );
-
-            executeUpdate(conn,
-                "DELETE FROM SUBTASKS WHERE task_id IN (SELECT task_id FROM TASKS WHERE group_id = ?)",
                 groupId
             );
 
@@ -489,19 +477,34 @@ public class GroupDAO {
             );
 
             // Xóa activity logs
-            executeUpdate(conn, "DELETE FROM ACTIVITY_LOGS WHERE group_id = ?", groupId);
+            executeUpdate(conn,
+                "DELETE FROM ACTIVITY_LOGS WHERE group_id = ?",
+                groupId
+            );
 
             // Xóa stocks
-            executeUpdate(conn, "DELETE FROM STOCKS WHERE group_id = ?", groupId);
+            executeUpdate(conn,
+                "DELETE FROM STOCKS WHERE group_id = ?",
+                groupId
+            );
 
             // Xóa tasks
-            executeUpdate(conn, "DELETE FROM TASKS WHERE group_id = ?", groupId);
+            executeUpdate(conn,
+                "DELETE FROM TASKS WHERE group_id = ?",
+                groupId
+            );
 
             // Xóa group members
-            executeUpdate(conn, "DELETE FROM GROUP_MEMBERS WHERE group_id = ?", groupId);
+            executeUpdate(conn,
+                "DELETE FROM GROUP_MEMBERS WHERE group_id = ?",
+                groupId
+            );
 
             // Xóa group
-            int row = executeUpdate(conn, "DELETE FROM `GROUPS` WHERE group_id = ?", groupId);
+            int row = executeUpdate(conn,
+                "DELETE FROM `GROUPS` WHERE group_id = ?",
+                groupId
+            );
 
             conn.commit();
 
@@ -531,7 +534,6 @@ public class GroupDAO {
 
         return false;
     }
-
 
     // Hàm phụ để chạy DELETE/UPDATE/INSERT
     private int executeUpdate(Connection conn, String sql, Object... params) throws Exception {
