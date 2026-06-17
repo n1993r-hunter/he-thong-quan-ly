@@ -39,7 +39,6 @@
 
       <nav class="menu">
         <a class="menu-item active" href="index.jsp">Trang chủ</a>
-        <button class="menu-item project-menu-toggle" id="projectMenuToggle" type="button">Dự án</button>
         <div class="project-submenu" id="sidebarProjectList"></div>
         <a class="menu-item" href="notifications.jsp">Thông báo</a>
         <a class="menu-item" href="account.jsp">Tài khoản</a>

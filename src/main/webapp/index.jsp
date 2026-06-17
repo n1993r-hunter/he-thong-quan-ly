@@ -130,7 +130,6 @@
 
         <nav class="menu">
             <a class="menu-item active" href="MyGroupsServlet">Trang chủ</a>
-            <a class="menu-item" href="MyGroupsServlet">Dự án</a>
             <a class="menu-item" href="notifications.jsp">Thông báo</a>
             <a class="menu-item" href="account.jsp">Tài khoản</a>
             <a class="menu-item" href="faq.jsp">FQA</a>

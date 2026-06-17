@@ -532,7 +532,6 @@
 
         <nav class="menu">
             <a class="menu-item" href="index.jsp">Trang chủ</a>
-            <a class="menu-item active" href="MyGroupsServlet">Dự án</a>
             <a class="menu-item" href="notifications.jsp">Thông báo</a>
             <a class="menu-item" href="account.jsp">Tài khoản</a>
             <a class="menu-item" href="faq.jsp">FQA</a>
@@ -548,6 +547,32 @@
 
     <main class="main-content">
         <header class="topbar">
+        <% if (isLeader) { %>
+    <section class="panel" style="margin-bottom:20px; border-color:rgba(239,68,68,.35);">
+        <div class="panel-header">
+            <div>
+                <h2 style="color:#fecaca;">Khu vực nguy hiểm</h2>
+                <p>
+                    Giải thể nhóm sẽ xóa toàn bộ dữ liệu của nhóm này, bao gồm task, bài nộp,
+                    đánh giá AI, peer review, leader review, coin và lịch sử biến động coin.
+                </p>
+            </div>
+        </div>
+
+        <form action="DissolveGroupServlet"
+              method="post"
+              onsubmit="return confirm('Bạn chắc chắn muốn GIẢI THỂ nhóm này? Toàn bộ dữ liệu nhóm sẽ bị xóa và không thể khôi phục.');">
+
+            <input type="hidden" name="groupId" value="<%= groupId %>">
+
+            <button type="submit"
+                    class="ghost-btn"
+                    style="border-color:rgba(239,68,68,.55); color:#fecaca;">
+                Giải thể nhóm
+            </button>
+        </form>
+    </section>
+<% } %>
             <div>
                 <p class="eyebrow">Chi tiết nhóm</p>
                 <h1><%= h(groupName) %></h1>
