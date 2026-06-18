@@ -8,7 +8,8 @@ import java.sql.PreparedStatement;
 import java.sql.ResultSet;
 import java.util.ArrayList;
 import java.util.List;
-
+import java.sql.Timestamp;
+import model.CoinRankingView;
 import model.MemberStock;
 import utils.DBConnection;
 
@@ -139,6 +140,108 @@ public class StockDAO {
 
                         view.setFullName(rs.getString("full_name"));
                         view.setUsername(rs.getString("username"));
+
+                        list.add(view);
+                    }
+                }
+            }
+
+        } catch (Exception e) {
+            e.printStackTrace();
+        }
+
+        return list;
+    }
+    public List<CoinRankingView> getCoinRankingAtTimeByGroupId(int groupId, Timestamp queryTime) {
+        List<CoinRankingView> list = new ArrayList<>();
+
+        StringBuilder sql = new StringBuilder();
+
+        sql.append("SELECT ");
+        sql.append("s.user_id, ");
+        sql.append("u.full_name, ");
+        sql.append("u.username, ");
+        sql.append("s.stock_code, ");
+        sql.append("s.current_price AS now_price, ");
+
+        if (queryTime != null) {
+            sql.append("COALESCE(( ");
+            sql.append("    SELECT h.price_after ");
+            sql.append("    FROM STOCK_PRICE_HISTORY h ");
+            sql.append("    WHERE h.stock_id = s.stock_id ");
+            sql.append("    AND h.recorded_at <= ? ");
+            sql.append("    ORDER BY h.recorded_at DESC, h.history_id DESC ");
+            sql.append("    LIMIT 1 ");
+            sql.append("), 100) AS price_at_time, ");
+
+            sql.append("( ");
+            sql.append("    SELECT COUNT(*) ");
+            sql.append("    FROM STOCK_PRICE_HISTORY h2 ");
+            sql.append("    WHERE h2.stock_id = s.stock_id ");
+            sql.append("    AND h2.recorded_at <= ? ");
+            sql.append(") AS change_count ");
+
+        } else {
+            sql.append("s.current_price AS price_at_time, ");
+            sql.append("( ");
+            sql.append("    SELECT COUNT(*) ");
+            sql.append("    FROM STOCK_PRICE_HISTORY h2 ");
+            sql.append("    WHERE h2.stock_id = s.stock_id ");
+            sql.append(") AS change_count ");
+        }
+
+        sql.append("FROM STOCKS s ");
+        sql.append("JOIN USERS u ON s.user_id = u.user_id ");
+        sql.append("JOIN GROUP_MEMBERS gm ON gm.group_id = s.group_id AND gm.user_id = s.user_id ");
+        sql.append("WHERE s.group_id = ? ");
+
+        if (queryTime != null) {
+            sql.append("AND gm.joined_at <= ? ");
+        }
+
+        sql.append("ORDER BY price_at_time DESC, u.full_name ASC");
+
+        try (Connection conn = DBConnection.getConnection()) {
+            if (conn == null) {
+                return list;
+            }
+
+            try (PreparedStatement ps = conn.prepareStatement(sql.toString())) {
+                int index = 1;
+
+                if (queryTime != null) {
+                    ps.setTimestamp(index++, queryTime);
+                    ps.setTimestamp(index++, queryTime);
+                }
+
+                ps.setInt(index++, groupId);
+
+                if (queryTime != null) {
+                    ps.setTimestamp(index++, queryTime);
+                }
+
+                try (ResultSet rs = ps.executeQuery()) {
+                    int rank = 1;
+
+                    while (rs.next()) {
+                        double nowPrice = rs.getDouble("now_price");
+                        double priceAtTime = rs.getDouble("price_at_time");
+
+                        CoinRankingView view = new CoinRankingView();
+
+                        view.setRank(rank++);
+                        view.setUserId(rs.getInt("user_id"));
+                        view.setFullName(rs.getString("full_name"));
+                        view.setUsername(rs.getString("username"));
+                        view.setStockCode(rs.getString("stock_code"));
+
+                        // Ở chức năng này, currentPrice dùng để hiển thị coin tại thời điểm được truy vấn
+                        view.setCurrentPrice(priceAtTime);
+
+                        // periodChange dùng để hiển thị chênh lệch giữa hiện tại và thời điểm đó
+                        view.setPeriodChange(nowPrice - priceAtTime);
+
+                        view.setChangeCount(rs.getInt("change_count"));
 
                         list.add(view);
                     }

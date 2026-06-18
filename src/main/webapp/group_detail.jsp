@@ -516,6 +516,63 @@
     border-radius: 50%;
     display: inline-block;
 }
+.coin-ranking-table {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 14px;
+    overflow: hidden;
+    border-radius: 18px;
+}
+
+.coin-ranking-table th,
+.coin-ranking-table td {
+    padding: 14px 12px;
+    border-bottom: 1px solid rgba(255,255,255,.08);
+    color: #cbd5e1;
+    text-align: left;
+}
+
+.coin-ranking-table th {
+    color: #fff;
+    background: rgba(15,23,42,.86);
+    font-weight: 900;
+}
+
+.coin-ranking-table tr {
+    background: rgba(3,8,23,.36);
+}
+
+.coin-ranking-table tr:hover {
+    background: rgba(56,189,248,.08);
+}
+
+.rank-badge {
+    display: inline-flex;
+    align-items: center;
+    justify-content: center;
+    min-width: 34px;
+    height: 34px;
+    border-radius: 999px;
+    background: rgba(56,189,248,.16);
+    border: 1px solid rgba(56,189,248,.28);
+    color: #e0f2fe;
+    font-weight: 900;
+}
+
+.coin-up {
+    color: #86efac;
+    font-weight: 900;
+}
+
+.coin-down {
+    color: #fca5a5;
+    font-weight: 900;
+}
+
+.coin-equal {
+    color: #fde68a;
+    font-weight: 900;
+}
     </style>
 </head>
 
@@ -621,6 +678,44 @@
                 <p>Vai trò hiện tại</p>
             </article>
         </section>
+        
+       <% if (isLeader) { %>
+<section class="panel" style="margin-top:20px;">
+    <div class="panel-header">
+        <div>
+            <h2>Xếp hạng coin tại một thời điểm</h2>
+            <p>
+                Nhóm trưởng nhập một thời điểm bất kỳ để xem thứ tự coin của thành viên tại đúng thời điểm đó.
+            </p>
+        </div>
+    </div>
+
+    <form id="coinRankingForm" class="task-create-form">
+        <input type="hidden" name="groupId" value="<%= groupId %>">
+
+        <div class="task-create-grid" style="grid-template-columns:1fr 220px;">
+            <div class="form-group">
+                <label>Thời điểm cần xem</label>
+                <input type="datetime-local" name="queryTime">
+            </div>
+
+            <div class="form-group">
+                <label>&nbsp;</label>
+                <button type="submit" class="primary-btn">
+                    Xem xếp hạng coin
+                </button>
+            </div>
+        </div>
+    </form>
+
+    <div id="coinRankingResult" style="margin-top:18px;">
+        <p class="small-muted">
+            Chọn một thời điểm rồi bấm xem xếp hạng.
+            Nếu bỏ trống thời điểm, hệ thống sẽ hiển thị xếp hạng coin hiện tại.
+        </p>
+    </div>
+</section>
+<% } %>
         
         <section class="panel stock-chart-panel">
     <div class="panel-header">
@@ -1879,6 +1974,145 @@ function escapeHtml(value) {
         .replace(/'/g, '&#039;');
 }
 </script>
+
+<!-- SCRIPT XẾP HẠNG COIN TẠI MỘT THỜI ĐIỂM -->
+<script>
+document.addEventListener("DOMContentLoaded", function () {
+    var rankingForm = document.getElementById("coinRankingForm");
+
+    if (!rankingForm) {
+        return;
+    }
+
+    rankingForm.addEventListener("submit", function (event) {
+        event.preventDefault();
+        loadCoinRanking();
+    });
+});
+
+function loadCoinRanking() {
+    var form = document.getElementById("coinRankingForm");
+    var resultBox = document.getElementById("coinRankingResult");
+
+    if (!form || !resultBox) {
+        return;
+    }
+
+    var formData = new FormData(form);
+    var params = new URLSearchParams(formData);
+
+    resultBox.innerHTML = '<p class="small-muted">Đang tải bảng xếp hạng coin...</p>';
+
+    fetch("CoinRankingServlet?" + params.toString())
+        .then(function (response) {
+            return response.json();
+        })
+        .then(function (data) {
+            if (!data.success) {
+                resultBox.innerHTML =
+                    '<div class="backend-message" style="background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca;">'
+                    + escapeHtml(data.message || "Không thể tải bảng xếp hạng.")
+                    + '</div>';
+                return;
+            }
+
+            renderCoinRanking(data.ranking || [], data.queryTime);
+        })
+        .catch(function (error) {
+            resultBox.innerHTML =
+                '<div class="backend-message" style="background:rgba(239,68,68,.12);border-color:rgba(239,68,68,.28);color:#fecaca;">'
+                + 'Lỗi tải bảng xếp hạng: ' + escapeHtml(error.message)
+                + '</div>';
+        });
+}
+
+function renderCoinRanking(ranking, queryTime) {
+    var resultBox = document.getElementById("coinRankingResult");
+
+    if (!resultBox) {
+        return;
+    }
+
+    if (!ranking.length) {
+        resultBox.innerHTML = '<p class="small-muted">Không có dữ liệu xếp hạng coin tại thời điểm này.</p>';
+        return;
+    }
+
+    var title = '';
+
+    if (queryTime && queryTime.trim() !== '') {
+        title = '<p class="small-muted">Đang xem xếp hạng coin tại thời điểm: <b>'
+            + escapeHtml(queryTime.replace("T", " "))
+            + '</b></p>';
+    } else {
+        title = '<p class="small-muted">Đang xem xếp hạng coin hiện tại.</p>';
+    }
+
+    var html = '';
+
+    html += title;
+    html += '<table class="coin-ranking-table">';
+    html += '<thead>';
+    html += '<tr>';
+    html += '<th>Hạng</th>';
+    html += '<th>Thành viên</th>';
+    html += '<th>Mã coin</th>';
+    html += '<th>Coin tại thời điểm</th>';
+    html += '<th>Chênh lệch so với hiện tại</th>';
+    html += '<th>Số lần biến động trước thời điểm</th>';
+    html += '</tr>';
+    html += '</thead>';
+    html += '<tbody>';
+
+    for (var i = 0; i < ranking.length; i++) {
+        var item = ranking[i];
+
+        var diff = Number(item.periodChange || 0);
+        var diffText = diff.toFixed(2);
+        var diffClass = 'coin-equal';
+
+        if (diff > 0) {
+            diffText = '+' + diffText;
+            diffClass = 'coin-up';
+        } else if (diff < 0) {
+            diffClass = 'coin-down';
+        }
+
+        var rankIcon = item.rank;
+
+        if (item.rank === 1) {
+            rankIcon = '🥇';
+        } else if (item.rank === 2) {
+            rankIcon = '🥈';
+        } else if (item.rank === 3) {
+            rankIcon = '🥉';
+        }
+
+        html += '<tr>';
+        html += '<td><span class="rank-badge">' + rankIcon + '</span></td>';
+
+        html += '<td>';
+        html += '<b>' + escapeHtml(item.fullName) + '</b><br>';
+        html += '<span class="small-muted">@' + escapeHtml(item.username) + ' · User ID: ' + item.userId + '</span>';
+        html += '</td>';
+
+        html += '<td><b>' + escapeHtml(item.stockCode) + '</b></td>';
+
+        html += '<td><b>' + Number(item.currentPrice || 0).toFixed(2) + '</b></td>';
+
+        html += '<td class="' + diffClass + '">' + diffText + '</td>';
+
+        html += '<td>' + item.changeCount + '</td>';
+        html += '</tr>';
+    }
+
+    html += '</tbody>';
+    html += '</table>';
+
+    resultBox.innerHTML = html;
+}
+</script>
+
 <script>
 document.addEventListener("DOMContentLoaded", function () {
     const filterButtons = document.querySelectorAll(".member-filter-btn");
@@ -1918,6 +2152,7 @@ document.addEventListener("DOMContentLoaded", function () {
     });
 });
 </script>
+
 
 </body>
 </html>
